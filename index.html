@@ -1,0 +1,4284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>运动员管理软件</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --ink: #1f2a2c;
+      --muted: #657274;
+      --line: #d8ded9;
+      --track: #1f6f68;
+      --track-dark: #164f4b;
+      --court: #c65d35;
+      --court-soft: #f3d6c8;
+      --gold: #d3a12f;
+      --blue: #345995;
+      --danger: #b64545;
+      --shadow: 0 10px 24px rgba(31, 42, 44, .08);
+      --radius: 8px;
+      font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(90deg, rgba(31,111,104,.08) 1px, transparent 1px) 0 0 / 64px 64px,
+        linear-gradient(0deg, rgba(198,93,53,.07) 1px, transparent 1px) 0 0 / 64px 64px,
+        var(--bg);
+      color: var(--ink);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, border .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    aside {
+      padding: 22px;
+      background: #142324;
+      color: #eef4ef;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-height: 48px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, #f6f7f4 0 8%, transparent 9%),
+        conic-gradient(from 20deg, var(--court) 0 28%, var(--gold) 28% 47%, var(--track) 47% 100%);
+      border: 2px solid rgba(255,255,255,.6);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 3px 0 0;
+      color: #adc0bd;
+      font-size: 13px;
+    }
+
+    .athlete-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .athlete-item {
+      width: 100%;
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px;
+      text-align: left;
+      background: rgba(255,255,255,.08);
+      color: #eef4ef;
+      border-color: rgba(255,255,255,.1);
+    }
+
+    .athlete-item.active {
+      background: #eef4ef;
+      color: #162728;
+      border-color: #eef4ef;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--court);
+      color: white;
+      font-weight: 800;
+    }
+
+    .athlete-item.active .avatar { background: var(--track); }
+
+    .athlete-name {
+      font-weight: 750;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .athlete-meta {
+      margin-top: 2px;
+      font-size: 12px;
+      opacity: .72;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-btn, .small-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: #eef4ef;
+      color: #142324;
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .small-icon {
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      color: inherit;
+      border-color: currentColor;
+      opacity: .72;
+    }
+
+    .delete-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #fff;
+      color: var(--danger);
+      border-color: rgba(182, 69, 69, .35);
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .delete-btn:hover {
+      background: #fff5f5;
+      border-color: var(--danger);
+    }
+
+    .edit-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #fff;
+      color: var(--track-dark);
+      border-color: rgba(31, 111, 104, .28);
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .edit-btn:hover {
+      background: #eef4ef;
+      border-color: var(--track);
+    }
+
+    .primary {
+      min-height: 42px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--track);
+      color: white;
+      border-color: var(--track);
+      font-weight: 750;
+    }
+
+    .secondary {
+      min-height: 38px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+      font-weight: 650;
+    }
+
+    .danger {
+      color: white;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      min-height: 88px;
+      padding: 18px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 4;
+    }
+
+    .title-block h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .title-block p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .workspace {
+      padding: 24px 26px 32px;
+      display: grid;
+      grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+
+    .panel-head {
+      min-height: 54px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 39px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 10px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--track);
+      box-shadow: 0 0 0 3px rgba(31,111,104,.14);
+    }
+
+    .wide { grid-column: 1 / -1; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 6px;
+      background: #edf1ed;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      min-height: 36px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 750;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+      box-shadow: 0 2px 6px rgba(31,42,44,.08);
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(240px, 340px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .form-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: #fbfcfb;
+    }
+
+    .form-card h4 {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+
+    .form-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .period-summary {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      margin-bottom: 12px;
+    }
+
+    .record-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .record {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .record-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .record-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .record-detail {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 9px;
+    }
+
+    .tag {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 750;
+      color: var(--track-dark);
+      background: rgba(31,111,104,.12);
+    }
+
+    .tag.court { color: #864020; background: var(--court-soft); }
+    .tag.blue { color: var(--blue); background: rgba(52,89,149,.13); }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 13px;
+      min-height: 88px;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .metric-label {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .chart {
+      display: grid;
+      gap: 13px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 78px minmax(120px, 1fr) 58px;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .bar-track {
+      height: 14px;
+      background: #edf1ed;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--track), var(--gold));
+      border-radius: inherit;
+    }
+
+    .count-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .count-group {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 11px;
+    }
+
+    .count-group-title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 850;
+      color: var(--ink);
+    }
+
+    .count-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .empty {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      background: #fbfcfb;
+    }
+
+    .export-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(20, 35, 36, .42);
+    }
+
+    .export-dialog.open { display: flex; }
+
+    .export-box {
+      width: min(720px, 100%);
+      max-height: min(680px, 92vh);
+      display: grid;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .export-box h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .export-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .export-box textarea {
+      min-height: 260px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .range-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr)) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .range-grid .secondary,
+    .range-grid .primary {
+      height: 39px;
+      min-height: 39px;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pdf-frame {
+      width: 100%;
+      height: min(620px, 70vh);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .pdf-link {
+      color: var(--track-dark);
+      font-weight: 800;
+      text-decoration: underline;
+    }
+
+    .mobile-menu { display: none; }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        padding: 14px 16px;
+      }
+      .athlete-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 3px;
+      }
+      .athlete-item {
+        width: 230px;
+        flex: 0 0 auto;
+      }
+      .workspace {
+        grid-template-columns: 1fr;
+        padding: 18px 16px 26px;
+      }
+      header {
+        padding: 16px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .header-actions { justify-content: flex-start; }
+      .split { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .filter-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: 1fr; }
+      .filter-grid { grid-template-columns: 1fr; }
+      .title-block h2 { font-size: 22px; }
+      .bar-row {
+        grid-template-columns: 68px minmax(90px, 1fr) 48px;
+        gap: 8px;
+      }
+      .primary, .secondary { width: 100%; }
+      .header-actions { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <h1>运动员管理</h1>
+          <p class="subtitle">档案、训练、比赛与成功率</p>
+        </div>
+      </div>
+      <button class="primary" id="addAthlete" title="新增运动员">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        新增运动员
+      </button>
+      <div class="athlete-list" id="athleteList" aria-label="运动员列表"></div>
+    </aside>
+
+    <main>
+      <header>
+        <div class="title-block">
+          <h2 id="currentName">运动员</h2>
+          <p id="currentSummary">选择或新增一名运动员开始管理</p>
+        </div>
+        <div class="header-actions">
+          <button class="secondary" id="exportData" title="导出数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            导出
+          </button>
+          <button class="secondary" id="exportPdf" title="导出PDF">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            导出PDF
+          </button>
+          <button class="secondary" id="importData" title="导入数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg>
+            导入
+          </button>
+          <input id="importFile" type="file" accept="application/json" hidden>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>个人信息</h3>
+            <button class="small-icon danger" id="deleteAthlete" title="删除当前运动员">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+            </button>
+          </div>
+          <div class="panel-body">
+            <form class="profile-grid" id="profileForm">
+              <label>姓名
+                <input name="name" required placeholder="例如：林悦">
+              </label>
+              <label>性别
+                <select name="gender">
+                  <option>女</option>
+                  <option>男</option>
+                  <option>其他</option>
+                </select>
+              </label>
+              <label>出生日期
+                <input name="birthDate" type="date">
+              </label>
+              <label>项目
+                <input name="sport" placeholder="例如：体操 / 田径">
+              </label>
+              <label>身高 cm
+                <input name="height" type="number" min="0" step="0.1">
+              </label>
+              <label>体重 kg
+                <input name="weight" type="number" min="0" step="0.1">
+              </label>
+              <label class="wide">联系方式
+                <input name="contact" placeholder="电话或邮箱">
+              </label>
+              <label class="wide">备注
+                <textarea name="notes" placeholder="伤病、优势、近期关注点"></textarea>
+              </label>
+              <button class="primary wide" type="submit">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                保存信息
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>训练与比赛</h3>
+          </div>
+          <div class="panel-body">
+            <nav class="tabs" aria-label="功能切换">
+              <button class="tab active" data-tab="results">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M5 5H3v3a4 4 0 0 0 4 4"/><path d="M19 5h2v3a4 4 0 0 1-4 4"/></svg>
+                比赛成绩
+              </button>
+              <button class="tab" data-tab="summaries">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6M8 11h8M8 15h5"/></svg>
+                总结报告
+              </button>
+              <button class="tab" data-tab="plans">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m8 15 2 2 5-5"/></svg>
+                训练计划
+              </button>
+              <button class="tab" data-tab="stats">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg>
+                项目成功率
+              </button>
+            </nav>
+
+            <div class="tab-view active" id="results">
+              <div class="split">
+                <form class="form-card form-stack" id="resultForm">
+                  <h4>新增比赛成绩</h4>
+                  <label>比赛名称<input name="event" required placeholder="例如：全国锦标赛"></label>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>项目<input name="discipline" placeholder="例如：太极拳"></label>
+                  <label>成绩<input name="score" placeholder="例如：14.450 / 第 1 名"></label>
+                  <label>名次<input name="rank" placeholder="例如：1"></label>
+                  <label>备注<textarea name="notes" placeholder="发挥情况、对手、裁判反馈"></textarea></label>
+                  <button class="primary" type="submit">添加成绩</button>
+                </form>
+                <div class="record-list" id="resultList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="summaries">
+              <div class="split">
+                <form class="form-card form-stack" id="summaryForm">
+                  <h4>新增总结报告</h4>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>总结名称<input name="focus" required placeholder="例如：成套稳定性"></label>
+                  <label>疲劳程度
+                    <select name="fatigue">
+                      <option>低</option>
+                      <option>中</option>
+                      <option>高</option>
+                    </select>
+                  </label>
+                  <label>总结<textarea name="content" placeholder="完成情况、问题、改进点"></textarea></label>
+                  <button class="primary" type="submit">添加报告</button>
+                </form>
+                <div class="record-list" id="summaryList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="plans">
+              <div class="split">
+                <form class="form-card form-stack" id="planForm">
+                  <h4>新增训练计划</h4>
+                  <label>开始日期<input name="startDate" type="date" required></label>
+                  <label>结束日期<input name="endDate" type="date"></label>
+                  <label>目标<input name="goal" required placeholder="例如：提升太极剑动作成功率"></label>
+                  <label>重点安排<textarea name="tasks" placeholder="每天训练安排、组数、恢复要求"></textarea></label>
+                  <label>状态
+                    <select name="status">
+                      <option>未开始</option>
+                      <option>进行中</option>
+                      <option>已完成</option>
+                    </select>
+                  </label>
+                  <button class="primary" type="submit">添加计划</button>
+                </form>
+                <div class="record-list" id="planList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="stats">
+              <div class="split">
+                <form class="form-card form-stack" id="attemptForm">
+                  <h4>记录项目动作</h4>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>整套 / 动作
+                    <select name="skill" required>
+                      <option>整套完成</option>
+                      <option>整套无（雀地龙）</option>
+                      <option>整套无难度</option>
+                    </select>
+                  </label>
+                  <label>项目
+                    <select name="difficulty">
+                      <option>太极拳</option>
+                      <option>太极剑</option>
+                      <option>太极扇</option>
+                    </select>
+                  </label>
+                  <label>扣分点
+                    <select name="deduction">
+                      <option>无</option>
+                      <option>71（附加支撑）</option>
+                      <option>70A（晃动）</option>
+                      <option>70B（移动/跳动）</option>
+                      <option>30（未过肩）</option>
+                      <option>31（正踢腿弯曲或小于135度）</option>
+                      <option>22（雀地龙夹角小于45度）</option>
+                    </select>
+                  </label>
+                  <label>扣分动作
+                    <select name="deductionAction">
+                      <option>无</option>
+                      <option>腾空正踢腿</option>
+                      <option>飞脚+提膝独立</option>
+                      <option>腾空外摆540</option>
+                      <option>腾空外摆450</option>
+                      <option>腾空外摆360</option>
+                      <option>后叉腿+蹬腿</option>
+                      <option>旋风脚180</option>
+                    </select>
+                  </label>
+                  <label>整套次数
+                    <select name="attempts" required>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                      <option>6</option>
+                      <option>7</option>
+                      <option>8</option>
+                      <option>9</option>
+                      <option selected>10</option>
+                    </select>
+                  </label>
+                  <label>成功次数
+                    <select name="successes" required>
+                      <option>0</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                      <option>6</option>
+                      <option selected>7</option>
+                      <option>8</option>
+                      <option>9</option>
+                      <option>10</option>
+                    </select>
+                  </label>
+                  <label>备注<textarea name="notes" placeholder="失败原因、保护方式、下次调整"></textarea></label>
+                  <button class="primary" type="submit">添加统计</button>
+                </form>
+                <div>
+                  <div class="filter-grid">
+                    <label>统计周期
+                      <select id="statRangeMode">
+                        <option value="week">本周</option>
+                        <option value="month">本月</option>
+                        <option value="year">本年</option>
+                        <option value="custom">自定义</option>
+                      </select>
+                    </label>
+                    <label>开始日期<input id="statFrom" type="date"></label>
+                    <label>结束日期<input id="statTo" type="date"></label>
+                  </div>
+                  <div class="period-summary" id="periodSummary"></div>
+                  <div class="stat-grid" id="metricGrid"></div>
+                  <div class="form-card">
+                    <h4>按项目成功率</h4>
+                    <div class="chart" id="difficultyChart"></div>
+                  </div>
+                  <div class="form-card" style="margin-top:12px">
+                    <h4>按项目扣分点次数</h4>
+                    <div class="chart" id="deductionChart"></div>
+                  </div>
+                  <div class="form-card" style="margin-top:12px">
+                    <h4>按项目扣分动作次数</h4>
+                    <div class="chart" id="deductionActionChart"></div>
+                  </div>
+                  <div class="record-list" id="attemptList" style="margin-top:12px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="export-dialog" id="exportDialog" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="export-box">
+      <h3 id="exportTitle">导出数据</h3>
+      <p>如果浏览器没有自动下载文件，可以复制下面的数据保存为 JSON 文件。</p>
+      <textarea id="exportText" readonly></textarea>
+      <div class="export-actions">
+        <button class="secondary" id="copyExport" type="button">复制数据</button>
+        <button class="secondary" id="downloadExport" type="button">重新下载</button>
+        <button class="primary" id="closeExport" type="button">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="export-dialog" id="pdfDialog" role="dialog" aria-modal="true" aria-labelledby="pdfTitle">
+    <div class="export-box">
+      <h3 id="pdfTitle">PDF报告预览</h3>
+      <p>先选时间范围，再点“生成预览”。如果没有自动保存，可用“打开PDF”或“保存PDF”。</p>
+      <div class="range-grid">
+        <label>开始日期<input id="pdfFrom" type="date"></label>
+        <label>结束日期<input id="pdfTo" type="date"></label>
+        <button class="primary" id="generatePdf" type="button">生成预览</button>
+      </div>
+      <iframe class="pdf-frame" id="pdfFrame" title="PDF报告预览"></iframe>
+      <div class="export-actions">
+        <a class="secondary pdf-link" id="openPdf" href="#" target="_blank" rel="noopener">打开PDF</a>
+        <button class="secondary" id="downloadPdf" type="button">保存PDF</button>
+        <button class="primary" id="closePdf" type="button">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="export-dialog" id="editAttemptDialog" role="dialog" aria-modal="true" aria-labelledby="editAttemptTitle">
+    <div class="export-box">
+      <h3 id="editAttemptTitle">更改历史记录</h3>
+      <p>修改后会立即更新这条历史记录和相关统计。</p>
+      <form class="form-stack" id="editAttemptForm">
+        <label>日期<input name="date" type="date" required></label>
+        <label>整套 / 动作
+          <select name="skill" required>
+            <option>整套完成</option>
+            <option>整套无（雀地龙）</option>
+            <option>整套无难度</option>
+          </select>
+        </label>
+        <label>项目
+          <select name="difficulty">
+            <option>太极拳</option>
+            <option>太极剑</option>
+            <option>太极扇</option>
+          </select>
+        </label>
+        <label>扣分点
+          <select name="deduction">
+            <option>无</option>
+            <option>71（附加支撑）</option>
+            <option>70A（晃动）</option>
+            <option>70B（移动/跳动）</option>
+            <option>30（未过肩）</option>
+            <option>31（正踢腿弯曲或小于135度）</option>
+            <option>22（雀地龙夹角小于45度）</option>
+          </select>
+        </label>
+        <label>扣分动作
+          <select name="deductionAction">
+            <option>无</option>
+            <option>腾空正踢腿</option>
+            <option>飞脚+提膝独立</option>
+            <option>腾空外摆540</option>
+            <option>腾空外摆450</option>
+            <option>腾空外摆360</option>
+            <option>后叉腿+蹬腿</option>
+            <option>旋风脚180</option>
+          </select>
+        </label><!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>运动员管理软件</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --ink: #1f2a2c;
+      --muted: #657274;
+      --line: #d8ded9;
+      --track: #1f6f68;
+      --track-dark: #164f4b;
+      --court: #c65d35;
+      --court-soft: #f3d6c8;
+      --gold: #d3a12f;
+      --blue: #345995;
+      --danger: #b64545;
+      --shadow: 0 10px 24px rgba(31, 42, 44, .08);
+      --radius: 8px;
+      font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(90deg, rgba(31,111,104,.08) 1px, transparent 1px) 0 0 / 64px 64px,
+        linear-gradient(0deg, rgba(198,93,53,.07) 1px, transparent 1px) 0 0 / 64px 64px,
+        var(--bg);
+      color: var(--ink);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, border .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    aside {
+      padding: 22px;
+      background: #142324;
+      color: #eef4ef;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-height: 48px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, #f6f7f4 0 8%, transparent 9%),
+        conic-gradient(from 20deg, var(--court) 0 28%, var(--gold) 28% 47%, var(--track) 47% 100%);
+      border: 2px solid rgba(255,255,255,.6);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 3px 0 0;
+      color: #adc0bd;
+      font-size: 13px;
+    }
+
+    .athlete-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .athlete-item {
+      width: 100%;
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px;
+      text-align: left;
+      background: rgba(255,255,255,.08);
+      color: #eef4ef;
+      border-color: rgba(255,255,255,.1);
+    }
+
+    .athlete-item.active {
+      background: #eef4ef;
+      color: #162728;
+      border-color: #eef4ef;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--court);
+      color: white;
+      font-weight: 800;
+    }
+
+    .athlete-item.active .avatar { background: var(--track); }
+
+    .athlete-name {
+      font-weight: 750;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .athlete-meta {
+      margin-top: 2px;
+      font-size: 12px;
+      opacity: .72;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-btn, .small-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: #eef4ef;
+      color: #142324;
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .small-icon {
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      color: inherit;
+      border-color: currentColor;
+      opacity: .72;
+    }
+
+    .delete-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #fff;
+      color: var(--danger);
+      border-color: rgba(182, 69, 69, .35);
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .delete-btn:hover {
+      background: #fff5f5;
+      border-color: var(--danger);
+    }
+
+    .edit-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #fff;
+      color: var(--track-dark);
+      border-color: rgba(31, 111, 104, .28);
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .edit-btn:hover {
+      background: #eef4ef;
+      border-color: var(--track);
+    }
+
+    .primary {
+      min-height: 42px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--track);
+      color: white;
+      border-color: var(--track);
+      font-weight: 750;
+    }
+
+    .secondary {
+      min-height: 38px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+      font-weight: 650;
+    }
+
+    .danger {
+      color: white;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      min-height: 88px;
+      padding: 18px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 4;
+    }
+
+    .title-block h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .title-block p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .workspace {
+      padding: 24px 26px 32px;
+      display: grid;
+      grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+
+    .panel-head {
+      min-height: 54px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 39px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 10px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--track);
+      box-shadow: 0 0 0 3px rgba(31,111,104,.14);
+    }
+
+    .wide { grid-column: 1 / -1; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 6px;
+      background: #edf1ed;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      min-height: 36px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 750;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+      box-shadow: 0 2px 6px rgba(31,42,44,.08);
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(240px, 340px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .form-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: #fbfcfb;
+    }
+
+    .form-card h4 {
+      margin: 0 0 12px;
+      font-size: 15px;
+    }
+
+    .form-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .period-summary {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      margin-bottom: 12px;
+    }
+
+    .record-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .record {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .record-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .record-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .record-detail {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 9px;
+    }
+
+    .tag {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 750;
+      color: var(--track-dark);
+      background: rgba(31,111,104,.12);
+    }
+
+    .tag.court { color: #864020; background: var(--court-soft); }
+    .tag.blue { color: var(--blue); background: rgba(52,89,149,.13); }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 13px;
+      min-height: 88px;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .metric-label {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .chart {
+      display: grid;
+      gap: 13px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 78px minmax(120px, 1fr) 58px;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .bar-track {
+      height: 14px;
+      background: #edf1ed;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--track), var(--gold));
+      border-radius: inherit;
+    }
+
+    .count-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .count-group {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 11px;
+    }
+
+    .count-group-title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 850;
+      color: var(--ink);
+    }
+
+    .count-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .empty {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      background: #fbfcfb;
+    }
+
+    .export-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(20, 35, 36, .42);
+    }
+
+    .export-dialog.open { display: flex; }
+
+    .export-box {
+      width: min(720px, 100%);
+      max-height: min(680px, 92vh);
+      display: grid;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .export-box h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .export-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .export-box textarea {
+      min-height: 260px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .range-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr)) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .range-grid .secondary,
+    .range-grid .primary {
+      height: 39px;
+      min-height: 39px;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pdf-frame {
+      width: 100%;
+      height: min(620px, 70vh);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }
+
+    .pdf-link {
+      color: var(--track-dark);
+      font-weight: 800;
+      text-decoration: underline;
+    }
+
+    .mobile-menu { display: none; }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        padding: 14px 16px;
+      }
+      .athlete-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 3px;
+      }
+      .athlete-item {
+        width: 230px;
+        flex: 0 0 auto;
+      }
+      .workspace {
+        grid-template-columns: 1fr;
+        padding: 18px 16px 26px;
+      }
+      header {
+        padding: 16px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .header-actions { justify-content: flex-start; }
+      .split { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .filter-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: 1fr; }
+      .filter-grid { grid-template-columns: 1fr; }
+      .title-block h2 { font-size: 22px; }
+      .bar-row {
+        grid-template-columns: 68px minmax(90px, 1fr) 48px;
+        gap: 8px;
+      }
+      .primary, .secondary { width: 100%; }
+      .header-actions { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <h1>运动员管理</h1>
+          <p class="subtitle">档案、训练、比赛与成功率</p>
+        </div>
+      </div>
+      <button class="primary" id="addAthlete" title="新增运动员">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        新增运动员
+      </button>
+      <div class="athlete-list" id="athleteList" aria-label="运动员列表"></div>
+    </aside>
+
+    <main>
+      <header>
+        <div class="title-block">
+          <h2 id="currentName">运动员</h2>
+          <p id="currentSummary">选择或新增一名运动员开始管理</p>
+        </div>
+        <div class="header-actions">
+          <button class="secondary" id="exportData" title="导出数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            导出
+          </button>
+          <button class="secondary" id="exportPdf" title="导出PDF">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            导出PDF
+          </button>
+          <button class="secondary" id="importData" title="导入数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg>
+            导入
+          </button>
+          <input id="importFile" type="file" accept="application/json" hidden>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>个人信息</h3>
+            <button class="small-icon danger" id="deleteAthlete" title="删除当前运动员">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+            </button>
+          </div>
+          <div class="panel-body">
+            <form class="profile-grid" id="profileForm">
+              <label>姓名
+                <input name="name" required placeholder="例如：林悦">
+              </label>
+              <label>性别
+                <select name="gender">
+                  <option>女</option>
+                  <option>男</option>
+                  <option>其他</option>
+                </select>
+              </label>
+              <label>出生日期
+                <input name="birthDate" type="date">
+              </label>
+              <label>项目
+                <input name="sport" placeholder="例如：体操 / 田径">
+              </label>
+              <label>身高 cm
+                <input name="height" type="number" min="0" step="0.1">
+              </label>
+              <label>体重 kg
+                <input name="weight" type="number" min="0" step="0.1">
+              </label>
+              <label class="wide">联系方式
+                <input name="contact" placeholder="电话或邮箱">
+              </label>
+              <label class="wide">备注
+                <textarea name="notes" placeholder="伤病、优势、近期关注点"></textarea>
+              </label>
+              <button class="primary wide" type="submit">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                保存信息
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>训练与比赛</h3>
+          </div>
+          <div class="panel-body">
+            <nav class="tabs" aria-label="功能切换">
+              <button class="tab active" data-tab="results">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M5 5H3v3a4 4 0 0 0 4 4"/><path d="M19 5h2v3a4 4 0 0 1-4 4"/></svg>
+                比赛成绩
+              </button>
+              <button class="tab" data-tab="summaries">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6M8 11h8M8 15h5"/></svg>
+                总结报告
+              </button>
+              <button class="tab" data-tab="plans">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m8 15 2 2 5-5"/></svg>
+                训练计划
+              </button>
+              <button class="tab" data-tab="stats">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg>
+                项目成功率
+              </button>
+            </nav>
+
+            <div class="tab-view active" id="results">
+              <div class="split">
+                <form class="form-card form-stack" id="resultForm">
+                  <h4>新增比赛成绩</h4>
+                  <label>比赛名称<input name="event" required placeholder="例如：全国锦标赛"></label>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>项目<input name="discipline" placeholder="例如：太极拳"></label>
+                  <label>成绩<input name="score" placeholder="例如：14.450 / 第 1 名"></label>
+                  <label>名次<input name="rank" placeholder="例如：1"></label>
+                  <label>备注<textarea name="notes" placeholder="发挥情况、对手、裁判反馈"></textarea></label>
+                  <button class="primary" type="submit">添加成绩</button>
+                </form>
+                <div class="record-list" id="resultList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="summaries">
+              <div class="split">
+                <form class="form-card form-stack" id="summaryForm">
+                  <h4>新增总结报告</h4>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>总结名称<input name="focus" required placeholder="例如：成套稳定性"></label>
+                  <label>疲劳程度
+                    <select name="fatigue">
+                      <option>低</option>
+                      <option>中</option>
+                      <option>高</option>
+                    </select>
+                  </label>
+                  <label>总结<textarea name="content" placeholder="完成情况、问题、改进点"></textarea></label>
+                  <button class="primary" type="submit">添加报告</button>
+                </form>
+                <div class="record-list" id="summaryList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="plans">
+              <div class="split">
+                <form class="form-card form-stack" id="planForm">
+                  <h4>新增训练计划</h4>
+                  <label>开始日期<input name="startDate" type="date" required></label>
+                  <label>结束日期<input name="endDate" type="date"></label>
+                  <label>目标<input name="goal" required placeholder="例如：提升太极剑动作成功率"></label>
+                  <label>重点安排<textarea name="tasks" placeholder="每天训练安排、组数、恢复要求"></textarea></label>
+                  <label>状态
+                    <select name="status">
+                      <option>未开始</option>
+                      <option>进行中</option>
+                      <option>已完成</option>
+                    </select>
+                  </label>
+                  <button class="primary" type="submit">添加计划</button>
+                </form>
+                <div class="record-list" id="planList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="stats">
+              <div class="split">
+                <form class="form-card form-stack" id="attemptForm">
+                  <h4>记录项目动作</h4>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>整套 / 动作
+                    <select name="skill" required>
+                      <option>整套完成</option>
+                      <option>整套无（雀地龙）</option>
+                      <option>整套无难度</option>
+                    </select>
+                  </label>
+                  <label>项目
+                    <select name="difficulty">
+                      <option>太极拳</option>
+                      <option>太极剑</option>
+                      <option>太极扇</option>
+                    </select>
+                  </label>
+                  <label>扣分点
+                    <select name="deduction">
+                      <option>无</option>
+                      <option>71（附加支撑）</option>
+                      <option>70A（晃动）</option>
+                      <option>70B（移动/跳动）</option>
+                      <option>30（未过肩）</option>
+                      <option>31（正踢腿弯曲或小于135度）</option>
+                      <option>22（雀地龙夹角小于45度）</option>
+                    </select>
+                  </label>
+                  <label>扣分动作
+                    <select name="deductionAction">
+                      <option>无</option>
+                      <option>腾空正踢腿</option>
+                      <option>飞脚+提膝独立</option>
+                      <option>腾空外摆540</option>
+                      <option>腾空外摆450</option>
+                      <option>腾空外摆360</option>
+                      <option>后叉腿+蹬腿</option>
+                      <option>旋风脚180</option>
+                    </select>
+                  </label>
+                  <label>整套次数
+                    <select name="attempts" required>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                      <option>6</option>
+                      <option>7</option>
+                      <option>8</option>
+                      <option>9</option>
+                      <option selected>10</option>
+                    </select>
+                  </label>
+                  <label>成功次数
+                    <select name="successes" required>
+                      <option>0</option>
+                      <option>1</option>
+                      <option>2</option>
+                      <option>3</option>
+                      <option>4</option>
+                      <option>5</option>
+                      <option>6</option>
+                      <option selected>7</option>
+                      <option>8</option>
+                      <option>9</option>
+                      <option>10</option>
+                    </select>
+                  </label>
+                  <label>备注<textarea name="notes" placeholder="失败原因、保护方式、下次调整"></textarea></label>
+                  <button class="primary" type="submit">添加统计</button>
+                </form>
+                <div>
+                  <div class="filter-grid">
+                    <label>统计周期
+                      <select id="statRangeMode">
+                        <option value="week">本周</option>
+                        <option value="month">本月</option>
+                        <option value="year">本年</option>
+                        <option value="custom">自定义</option>
+                      </select>
+                    </label>
+                    <label>开始日期<input id="statFrom" type="date"></label>
+                    <label>结束日期<input id="statTo" type="date"></label>
+                  </div>
+                  <div class="period-summary" id="periodSummary"></div>
+                  <div class="stat-grid" id="metricGrid"></div>
+                  <div class="form-card">
+                    <h4>按项目成功率</h4>
+                    <div class="chart" id="difficultyChart"></div>
+                  </div>
+                  <div class="form-card" style="margin-top:12px">
+                    <h4>按项目扣分点次数</h4>
+                    <div class="chart" id="deductionChart"></div>
+                  </div>
+                  <div class="form-card" style="margin-top:12px">
+                    <h4>按项目扣分动作次数</h4>
+                    <div class="chart" id="deductionActionChart"></div>
+                  </div>
+                  <div class="record-list" id="attemptList" style="margin-top:12px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="export-dialog" id="exportDialog" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="export-box">
+      <h3 id="exportTitle">导出数据</h3>
+      <p>如果浏览器没有自动下载文件，可以复制下面的数据保存为 JSON 文件。</p>
+      <textarea id="exportText" readonly></textarea>
+      <div class="export-actions">
+        <button class="secondary" id="copyExport" type="button">复制数据</button>
+        <button class="secondary" id="downloadExport" type="button">重新下载</button>
+        <button class="primary" id="closeExport" type="button">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="export-dialog" id="pdfDialog" role="dialog" aria-modal="true" aria-labelledby="pdfTitle">
+    <div class="export-box">
+      <h3 id="pdfTitle">PDF报告预览</h3>
+      <p>先选时间范围，再点“生成预览”。如果没有自动保存，可用“打开PDF”或“保存PDF”。</p>
+      <div class="range-grid">
+        <label>开始日期<input id="pdfFrom" type="date"></label>
+        <label>结束日期<input id="pdfTo" type="date"></label>
+        <button class="primary" id="generatePdf" type="button">生成预览</button>
+      </div>
+      <iframe class="pdf-frame" id="pdfFrame" title="PDF报告预览"></iframe>
+      <div class="export-actions">
+        <a class="secondary pdf-link" id="openPdf" href="#" target="_blank" rel="noopener">打开PDF</a>
+        <button class="secondary" id="downloadPdf" type="button">保存PDF</button>
+        <button class="primary" id="closePdf" type="button">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="export-dialog" id="editAttemptDialog" role="dialog" aria-modal="true" aria-labelledby="editAttemptTitle">
+    <div class="export-box">
+      <h3 id="editAttemptTitle">更改历史记录</h3>
+      <p>修改后会立即更新这条历史记录和相关统计。</p>
+      <form class="form-stack" id="editAttemptForm">
+        <label>日期<input name="date" type="date" required></label>
+        <label>整套 / 动作
+          <select name="skill" required>
+            <option>整套完成</option>
+            <option>整套无（雀地龙）</option>
+            <option>整套无难度</option>
+          </select>
+        </label>
+        <label>项目
+          <select name="difficulty">
+            <option>太极拳</option>
+            <option>太极剑</option>
+            <option>太极扇</option>
+          </select>
+        </label>
+        <label>扣分点
+          <select name="deduction">
+            <option>无</option>
+            <option>71（附加支撑）</option>
+            <option>70A（晃动）</option>
+            <option>70B（移动/跳动）</option>
+            <option>30（未过肩）</option>
+            <option>31（正踢腿弯曲或小于135度）</option>
+            <option>22（雀地龙夹角小于45度）</option>
+          </select>
+        </label>
+        <label>扣分动作
+          <select name="deductionAction">
+            <option>无</option>
+            <option>腾空正踢腿</option>
+            <option>飞脚+提膝独立</option>
+            <option>腾空外摆540</option>
+            <option>腾空外摆450</option>
+            <option>腾空外摆360</option>
+            <option>后叉腿+蹬腿</option>
+            <option>旋风脚180</option>
+          </select>
+        </label>
+        <label>整套次数
+          <select name="attempts" required>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>7</option>
+            <option>8</option>
+            <option>9</option>
+            <option>10</option>
+          </select>
+        </label>
+        <label>成功次数
+          <select name="successes" required>
+            <option>0</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>7</option>
+            <option>8</option>
+            <option>9</option>
+            <option>10</option>
+          </select>
+        </label>
+        <label>备注<textarea name="notes" placeholder="失败原因、保护方式、下次调整"></textarea></label>
+        <div class="export-actions">
+          <button class="secondary" id="cancelEditAttempt" type="button">取消</button>
+          <button class="primary" type="submit">保存更改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = "athlete-manager-v9";
+    const toLocalIso = date => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const today = () => toLocalIso(new Date());
+    const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+
+    const icons = {
+      trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>'
+    };
+
+    const deductionLabels = {
+      "70A": "70A（晃动）",
+      "70B": "70B（移动/跳动）",
+      "30": "30（未过肩）",
+      "31": "31（正踢腿弯曲或小于135度）",
+      "22": "22（雀地龙夹角小于45度）"
+    };
+
+    function normalizeDeductionLabel(value) {
+      return deductionLabels[value] || value || "无";
+    }
+
+    function normalizeStateData(data) {
+      (data.athletes || []).forEach(athlete => {
+        (athlete.attempts || []).forEach(item => {
+          item.deduction = normalizeDeductionLabel(item.deduction);
+        });
+      });
+      return data;
+    }
+
+    const sampleData = {
+      selectedId: "a1",
+      athletes: [{
+        id: "a1",
+        name: "芝宁",
+        gender: "女",
+        birthDate: "",
+        sport: "武术",
+        height: "",
+        weight: "",
+        contact: "",
+        notes: "已导入《芝宁太极训练成功率统计》PDF 明细。",
+        results: [],
+        summaries: [],
+        plans: [],
+        attempts: [
+          { id: uid(), date: "2026-03-02", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-03", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-04", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-05", skill: "整套完成", difficulty: "太极拳", deduction: "70A", deductionAction: "腾空正踢腿", attempts: 2, successes: 1, notes: "正踢扣70a" },
+          { id: uid(), date: "2026-03-05", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-06", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-06", skill: "整套完成", difficulty: "太极扇", deduction: "70A", deductionAction: "腾空正踢腿", attempts: 2, successes: 1, notes: "正踢扣70a" },
+          { id: uid(), date: "2026-03-11", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-12", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "腾空正踢腿", attempts: 3, successes: 2, notes: "正踢扣踩地" },
+          { id: uid(), date: "2026-03-12", skill: "整套完成", difficulty: "太极扇", deduction: "70A", deductionAction: "腾空正踢腿", attempts: 3, successes: 2, notes: "正踢扣70a" },
+          { id: uid(), date: "2026-03-17", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-17", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 1, successes: 0, notes: "站不稳" },
+          { id: uid(), date: "2026-03-18", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "第二套可扣可不扣" },
+          { id: uid(), date: "2026-03-27", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 3, successes: 3, notes: "" },
+          { id: uid(), date: "2026-03-30", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-31", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 3, successes: 2, notes: "起跳往右边" },
+          { id: uid(), date: "2026-04-02", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-07", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-09", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 1, notes: "登地突然往右边" },
+          { id: uid(), date: "2026-04-09", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 3, successes: 0, notes: "" },
+          { id: uid(), date: "2026-04-13", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-14", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-15", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-15", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-16", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-16", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-16", skill: "整套完成", difficulty: "太极剑", deduction: "70A", deductionAction: "无", attempts: 1, successes: 0, notes: "70a" },
+          { id: uid(), date: "2026-04-20", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-21", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-22", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 1, successes: 0, notes: "" }
+        ]
+      }]
+    };
+
+    let state = load();
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) return normalizeStateData(JSON.parse(raw));
+      } catch (error) {
+        console.warn(error);
+      }
+      return normalizeStateData(structuredClone(sampleData));
+    }
+
+    function save() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function currentAthlete() {
+      return state.athletes.find(a => a.id === state.selectedId) || state.athletes[0];
+    }
+
+    function setFormValues(form, data) {
+      [...form.elements].forEach(el => {
+        if (!el.name) return;
+        el.value = data[el.name] ?? "";
+      });
+    }
+
+    function getFormData(form) {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, match => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[match]));
+    }
+
+    function initials(name) {
+      return (name || "新").slice(0, 1).toUpperCase();
+    }
+
+    function ageFromDate(date) {
+      if (!date) return "";
+      const diff = new Date(Date.now() - new Date(date).getTime());
+      return Math.abs(diff.getUTCFullYear() - 1970);
+    }
+
+    function render() {
+      if (!state.athletes.length) {
+        const athlete = newAthlete();
+        state.athletes.push(athlete);
+        state.selectedId = athlete.id;
+      }
+      const athlete = currentAthlete();
+      state.selectedId = athlete.id;
+      save();
+      renderAthletes(athlete);
+      renderProfile(athlete);
+      renderRecords(athlete);
+      renderStats(athlete);
+    }
+
+    function renderAthletes(active) {
+      document.getElementById("athleteList").innerHTML = state.athletes.map(a => `
+        <button class="athlete-item ${a.id === active.id ? "active" : ""}" data-select="${a.id}" title="切换到 ${escapeHtml(a.name)}">
+          <span class="avatar">${escapeHtml(initials(a.name))}</span>
+          <span>
+            <span class="athlete-name">${escapeHtml(a.name || "未命名")}</span>
+            <span class="athlete-meta">${escapeHtml(a.sport || "未填写项目")}</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+      `).join("");
+    }
+
+    function renderProfile(athlete) {
+      document.getElementById("currentName").textContent = athlete.name || "未命名运动员";
+      const age = ageFromDate(athlete.birthDate);
+      document.getElementById("currentSummary").textContent = [
+        athlete.sport,
+        age ? `${age} 岁` : ""
+      ].filter(Boolean).join(" · ") || "完善个人信息后，这里会显示核心摘要";
+      setFormValues(document.getElementById("profileForm"), athlete);
+    }
+
+    function recordShell(items, emptyText, mapper) {
+      if (!items.length) return `<div class="empty">${emptyText}</div>`;
+      return [...items].sort((a, b) => (b.date || b.startDate || "").localeCompare(a.date || a.startDate || "")).map(mapper).join("");
+    }
+
+    function renderRecords(athlete) {
+      document.getElementById("resultList").innerHTML = recordShell(athlete.results || [], "还没有比赛成绩记录", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.event)}</p>
+              <p class="record-detail">${escapeHtml(item.date)} · ${escapeHtml(item.discipline || "未填项目")}</p>
+            </div>
+            <button class="delete-btn" type="button" data-delete="results:${item.id}" title="删除成绩">${icons.trash}删除</button>
+          </div>
+          <div class="tag-row">
+            <span class="tag">成绩 ${escapeHtml(item.score || "-")}</span>
+            <span class="tag court">名次 ${escapeHtml(item.rank || "-")}</span>
+          </div>
+          ${item.notes ? `<p class="record-detail">${escapeHtml(item.notes)}</p>` : ""}
+        </article>
+      `);
+
+      document.getElementById("summaryList").innerHTML = recordShell(athlete.summaries || [], "还没有总结报告", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.focus)}</p>
+              <p class="record-detail">${escapeHtml(item.date)}</p>
+            </div>
+            <button class="delete-btn" type="button" data-delete="summaries:${item.id}" title="删除报告">${icons.trash}删除</button>
+          </div>
+          <div class="tag-row"><span class="tag blue">疲劳 ${escapeHtml(item.fatigue)}</span></div>
+          ${item.content ? `<p class="record-detail">${escapeHtml(item.content)}</p>` : ""}
+        </article>
+      `);
+
+      document.getElementById("planList").innerHTML = recordShell(athlete.plans || [], "还没有训练计划", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.goal)}</p>
+              <p class="record-detail">${escapeHtml(item.startDate)}${item.endDate ? ` 至 ${escapeHtml(item.endDate)}` : ""}</p>
+            </div>
+            <button class="delete-btn" type="button" data-delete="plans:${item.id}" title="删除计划">${icons.trash}删除</button>
+          </div>
+          <div class="tag-row"><span class="tag">${escapeHtml(item.status)}</span></div>
+          ${item.tasks ? `<p class="record-detail">${escapeHtml(item.tasks)}</p>` : ""}
+        </article>
+      `);
+
+      document.getElementById("attemptList").innerHTML = recordShell(athlete.attempts || [], "还没有项目动作记录", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.skill)}</p>
+              <p class="record-detail">${escapeHtml(item.date)} · 项目 ${escapeHtml(item.difficulty)}</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="edit-btn" type="button" data-edit="attempts:${item.id}" title="更改统计">更改</button>
+              <button class="delete-btn" type="button" data-delete="attempts:${item.id}" title="删除统计">${icons.trash}删除</button>
+            </div>
+          </div>
+          <div class="tag-row">
+            <span class="tag">整套次数 ${escapeHtml(item.attempts)}</span>
+            <span class="tag court">成功 ${escapeHtml(item.successes)}</span>
+            <span class="tag blue">${Math.round((item.successes / item.attempts) * 100)}%</span>
+            <span class="tag">扣分点 ${escapeHtml(item.deduction || "-")}</span>
+            <span class="tag">扣分动作 ${escapeHtml(item.deductionAction || "-")}</span>
+          </div>
+          ${item.notes ? `<p class="record-detail">${escapeHtml(item.notes)}</p>` : ""}
+        </article>
+      `);
+    }
+
+    function renderStats(athlete) {
+      const allAttempts = athlete.attempts || [];
+      const range = getSelectedRange();
+      const attempts = filterAttemptsByRange(allAttempts, range);
+      const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
+      const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
+      const rate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
+      const projectGroups = groupAttempts(attempts, "difficulty");
+      const deductionGroups = groupDeductionsByProject(attempts, "point");
+      const deductionActionGroups = groupDeductionsByProject(attempts, "action");
+      const best = [...projectGroups].sort((a, b) => b.rate - a.rate)[0];
+      document.getElementById("periodSummary").textContent = `${range.label}：${range.from} 至 ${range.to}`;
+
+      document.getElementById("metricGrid").innerHTML = [
+        ["范围整套次数", totalAttempts],
+        ["范围成功", totalSuccess],
+        ["范围成功率", `${rate}%`],
+        ["最佳项目", best ? `${best.name} ${best.rate}%` : "-"]
+      ].map(([label, value]) => `
+        <div class="metric">
+          <div class="metric-value">${escapeHtml(value)}</div>
+          <div class="metric-label">${escapeHtml(label)}</div>
+        </div>
+      `).join("");
+
+      document.getElementById("difficultyChart").innerHTML = renderGroupChart(projectGroups, "记录项目动作后自动生成项目成功率");
+      document.getElementById("deductionChart").innerHTML = renderProjectCountList(deductionGroups, "这个时间范围内没有扣分点记录");
+      document.getElementById("deductionActionChart").innerHTML = renderProjectCountList(deductionActionGroups, "这个时间范围内没有扣分动作记录");
+    }
+
+    function getPeriodRange(mode) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const end = new Date(start);
+      if (mode === "week") {
+        const mondayOffset = (start.getDay() + 6) % 7;
+        start.setDate(start.getDate() - mondayOffset);
+        end.setTime(start.getTime());
+        end.setDate(start.getDate() + 6);
+        return { from: toLocalIso(start), to: toLocalIso(end), label: "本周" };
+      }
+      if (mode === "month") {
+        start.setDate(1);
+        end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
+        return { from: toLocalIso(start), to: toLocalIso(end), label: "本月" };
+      }
+      if (mode === "year") {
+        start.setMonth(0, 1);
+        end.setFullYear(start.getFullYear(), 11, 31);
+        return { from: toLocalIso(start), to: toLocalIso(end), label: "本年" };
+      }
+      return { from: today(), to: today(), label: "自定义" };
+    }
+
+    function syncStatRangeInputs() {
+      const mode = document.getElementById("statRangeMode").value;
+      const fromInput = document.getElementById("statFrom");
+      const toInput = document.getElementById("statTo");
+      const isCustom = mode === "custom";
+      if (!isCustom) {
+        const range = getPeriodRange(mode);
+        fromInput.value = range.from;
+        toInput.value = range.to;
+      } else {
+        fromInput.value = fromInput.value || today();
+        toInput.value = toInput.value || today();
+      }
+      fromInput.disabled = !isCustom;
+      toInput.disabled = !isCustom;
+    }
+
+    function getSelectedRange() {
+      const mode = document.getElementById("statRangeMode").value;
+      if (mode !== "custom") return getPeriodRange(mode);
+      let from = document.getElementById("statFrom").value || today();
+      let to = document.getElementById("statTo").value || today();
+      if (from > to) [from, to] = [to, from];
+      return { from, to, label: "自定义" };
+    }
+
+    function filterAttemptsByRange(attempts, range) {
+      return attempts.filter(item => {
+        const date = item.date || "";
+        return date >= range.from && date <= range.to;
+      });
+    }
+
+    function renderGroupChart(groups, emptyText) {
+      return groups.length ? groups.map(group => `
+        <div class="bar-row">
+          <span>${escapeHtml(group.name)}</span>
+          <div class="bar-track"><div class="bar" style="width:${group.rate}%"></div></div>
+          <span>${group.rate}%</span>
+        </div>
+      `).join("") : `<div class="empty">${emptyText}</div>`;
+    }
+
+    function renderProjectCountList(groups, emptyText) {
+      if (!groups.length) return `<div class="empty">${emptyText}</div>`;
+      return `<div class="count-list">${groups.map(group => `
+        <div class="count-group">
+          <p class="count-group-title">${escapeHtml(group.project)}</p>
+          <div class="count-items">
+            ${group.items.map(item => `<span class="tag court">${escapeHtml(item.name)} ${escapeHtml(item.count)}次</span>`).join("")}
+          </div>
+        </div>
+      `).join("")}</div>`;
+    }
+
+    function groupAttempts(attempts, field) {
+      const map = new Map();
+      attempts.forEach(item => {
+        const key = item[field] || "-";
+        const prev = map.get(key) || { name: key, attempts: 0, successes: 0 };
+        prev.attempts += Number(item.attempts || 0);
+        prev.successes += Number(item.successes || 0);
+        map.set(key, prev);
+      });
+      return [...map.values()]
+        .map(item => ({ ...item, rate: item.attempts ? Math.round(item.successes / item.attempts * 100) : 0 }))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    function groupDeductionsByProject(attempts, mode) {
+      const projectMap = new Map();
+      attempts.forEach(item => {
+        const deduction = item.deduction || "无";
+        const action = item.deductionAction || "无";
+        if (deduction === "无" && action === "无") return;
+        if (mode === "point" && deduction === "无") return;
+        if (mode === "action" && action === "无") return;
+
+        const project = item.difficulty || "-";
+        const count = Math.max(1, Number(item.attempts || 0) - Number(item.successes || 0));
+        const name = mode === "action"
+          ? `${action}${deduction !== "无" ? deduction : ""}`
+          : deduction;
+        const itemMap = projectMap.get(project) || new Map();
+        itemMap.set(name, (itemMap.get(name) || 0) + count);
+        projectMap.set(project, itemMap);
+      });
+
+      return [...projectMap.entries()]
+        .map(([project, itemMap]) => ({
+          project,
+          items: [...itemMap.entries()]
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "zh-CN"))
+        }))
+        .sort((a, b) => a.project.localeCompare(b.project, "zh-CN"));
+    }
+
+    function pdfTableRows(groups) {
+      if (!groups.length) return `<tr><td colspan="4">暂无数据</td></tr>`;
+      return groups.map(group => `
+        <tr>
+          <td>${escapeHtml(group.name)}</td>
+          <td>${escapeHtml(group.attempts)}</td>
+          <td>${escapeHtml(group.successes)}</td>
+          <td>${escapeHtml(group.rate)}%</td>
+        </tr>
+      `).join("");
+    }
+
+    function pdfProjectCountRows(groups) {
+      if (!groups.length) return `<tr><td colspan="3">暂无数据</td></tr>`;
+      return groups.flatMap(group => group.items.map((item, index) => `
+        <tr>
+          <td>${index === 0 ? escapeHtml(group.project) : ""}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.count)}次</td>
+        </tr>
+      `)).join("");
+    }
+
+    function buildPdfReportHtml(autoPrint = false) {
+      const athlete = currentAthlete();
+      const attempts = athlete.attempts || [];
+      const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
+      const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
+      const totalRate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
+      const records = [...attempts].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      const rows = records.map(item => `
+        <tr>
+          <td>${escapeHtml(item.date || "")}</td>
+          <td>${escapeHtml(item.difficulty || "")}</td>
+          <td>${escapeHtml(item.skill || "")}</td>
+          <td>${escapeHtml(item.attempts || 0)}</td>
+          <td>${escapeHtml(item.successes || 0)}</td>
+          <td>${Math.round((Number(item.successes || 0) / Math.max(1, Number(item.attempts || 1))) * 100)}%</td>
+          <td>${escapeHtml(item.deduction || "-")}</td>
+          <td>${escapeHtml(item.deductionAction || "-")}</td>
+          <td>${escapeHtml(item.notes || "")}</td>
+        </tr>
+      `).join("");
+      return `<!doctype html>
+        <html lang="zh-CN">
+        <head>
+          <meta charset="utf-8">
+          <title>${escapeHtml(athlete.name || "运动员")}训练成功率报告</title>
+          <style>
+            body { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; color: #1f2a2c; margin: 28px; }
+            h1 { margin: 0 0 6px; font-size: 24px; }
+            h2 { margin: 22px 0 8px; font-size: 16px; }
+            p { margin: 4px 0; color: #657274; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+            th, td { border: 1px solid #cfd7d1; padding: 6px 7px; text-align: left; vertical-align: top; }
+            th { background: #eef4ef; }
+            .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+            .box { border: 1px solid #cfd7d1; padding: 10px; }
+            .value { font-size: 20px; font-weight: 800; }
+            @media print { body { margin: 14mm; } button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <h1>${escapeHtml(athlete.name || "运动员")}训练成功率报告</h1>
+          <p>导出日期：${today()}</p>
+          <p>项目：${escapeHtml(athlete.sport || "-")}</p>
+          <div class="summary">
+            <div class="box"><div class="value">${totalAttempts}</div><p>总整套次数</p></div>
+            <div class="box"><div class="value">${totalSuccess}</div><p>总成功</p></div>
+            <div class="box"><div class="value">${totalRate}%</div><p>总成功率</p></div>
+            <div class="box"><div class="value">${records.length}</div><p>记录数</p></div>
+          </div>
+          <h2>按项目成功率</h2>
+          <table><thead><tr><th>项目</th><th>整套次数</th><th>成功</th><th>成功率</th></tr></thead><tbody>${pdfTableRows(groupAttempts(attempts, "difficulty"))}</tbody></table>
+          <h2>按项目扣分点次数</h2>
+          <table><thead><tr><th>项目</th><th>扣分点</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "point"))}</tbody></table>
+          <h2>按项目扣分动作次数</h2>
+          <table><thead><tr><th>项目</th><th>扣分动作</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "action"))}</tbody></table>
+          <h2>历史记录</h2>
+          <table>
+            <thead><tr><th>日期</th><th>项目</th><th>整套/动作</th><th>整套次数</th><th>成功</th><th>成功率</th><th>扣分点</th><th>扣分动作</th><th>备注</th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="9">暂无记录</td></tr>`}</tbody>
+          </table>
+          ${autoPrint ? `<script>window.addEventListener("load", () => setTimeout(() => window.print(), 300));<\/script>` : ""}
+        </body>
+        </html>`;
+    }
+
+    function canvasTextLines(ctx, text, maxWidth) {
+      const value = String(text ?? "-");
+      const lines = [];
+      let line = "";
+      for (const char of value) {
+        const next = line + char;
+        if (ctx.measureText(next).width > maxWidth && line) {
+          lines.push(line);
+          line = char;
+        } else {
+          line = next;
+        }
+      }
+      lines.push(line || "");
+      return lines;
+    }
+
+    let latestPdfUrl = "";
+    let latestPdfFilename = "";
+    let latestPdfBlob = null;
+
+    function getPdfRange() {
+      const fromInput = document.getElementById("pdfFrom");
+      const toInput = document.getElementById("pdfTo");
+      const fallback = getSelectedRange();
+      let from = fromInput?.value || fallback.from || today();
+      let to = toInput?.value || fallback.to || today();
+      if (from > to) [from, to] = [to, from];
+      return { from, to };
+    }
+
+    function syncPdfRangeInputs(range = getSelectedRange()) {
+      const fromInput = document.getElementById("pdfFrom");
+      const toInput = document.getElementById("pdfTo");
+      if (fromInput) fromInput.value = range.from;
+      if (toInput) toInput.value = range.to;
+    }
+
+    function setLatestPdf(blob, filename) {
+      if (latestPdfUrl) URL.revokeObjectURL(latestPdfUrl);
+      latestPdfUrl = URL.createObjectURL(blob);
+      latestPdfFilename = filename;
+      latestPdfBlob = blob;
+      const openLink = document.getElementById("openPdf");
+      const frame = document.getElementById("pdfFrame");
+      openLink.href = latestPdfUrl;
+      openLink.download = filename;
+      frame.src = latestPdfUrl;
+      document.getElementById("pdfDialog").classList.add("open");
+    }
+
+    function directDownloadPdf(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function savePdfBlob(blob, filename) {
+      setLatestPdf(blob, filename);
+
+      try {
+        if (window.showSaveFilePicker) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: "PDF 文件",
+              accept: { "application/pdf": [".pdf"] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          alert("PDF已保存。");
+          return;
+        }
+
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], filename, { type: "application/pdf" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "训练成功率报告"
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        if (error && error.name === "AbortError") return;
+        console.warn("保存PDF失败，改用普通下载。", error);
+      }
+
+      directDownloadPdf(blob, filename);
+    }
+
+    function makePdfBlobFromCanvases(canvases) {
+      const pageW = 595.28;
+      const pageH = 841.89;
+      const objects = [];
+      const pages = [];
+
+      canvases.forEach((canvas, index) => {
+        const imageBinary = atob(canvas.toDataURL("image/jpeg", 0.92).split(",")[1]);
+        const pageObj = 3 + index * 3;
+        const contentObj = pageObj + 1;
+        const imageObj = pageObj + 2;
+        pages.push(pageObj);
+        objects[pageObj] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im${index} ${imageObj} 0 R >> >> /Contents ${contentObj} 0 R >>`;
+        const stream = `q ${pageW} 0 0 ${pageH} 0 0 cm /Im${index} Do Q`;
+        objects[contentObj] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+        objects[imageObj] = `<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBinary.length} >>\nstream\n${imageBinary}\nendstream`;
+      });
+
+      objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+      objects[2] = `<< /Type /Pages /Kids [${pages.map(id => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      for (let i = 1; i < objects.length; i++) {
+        offsets[i] = pdf.length;
+        pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`;
+      }
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+      for (let i = 1; i < objects.length; i++) {
+        pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+      }
+      pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      const bytes = new Uint8Array(pdf.length);
+      for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 255;
+      return new Blob([bytes], { type: "application/pdf" });
+    }
+
+    function buildPdfCanvases(range = getPdfRange()) {
+      const athlete = currentAthlete();
+      const attempts = filterAttemptsByRange(athlete.attempts || [], range);
+      const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
+      const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
+      const totalRate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
+      const records = [...attempts].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      const canvases = [];
+      const width = 1240;
+      const height = 1754;
+      const margin = 70;
+      let canvas;
+      let ctx;
+      let y;
+
+      function newPage() {
+        canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#1f2a2c";
+        ctx.textBaseline = "top";
+        y = margin;
+        canvases.push(canvas);
+      }
+
+      function ensureSpace(needed) {
+        if (y + needed > height - margin) newPage();
+      }
+
+      function drawText(text, x, font, color = "#1f2a2c") {
+        ctx.font = font;
+        ctx.fillStyle = color;
+        ctx.fillText(String(text ?? ""), x, y);
+      }
+
+      function drawTable(title, headers, rows, widths) {
+        ensureSpace(110);
+        ctx.font = "bold 30px Arial, sans-serif";
+        ctx.fillStyle = "#1f2a2c";
+        ctx.fillText(title, margin, y);
+        y += 46;
+        const tableWidth = widths.reduce((sum, item) => sum + item, 0);
+        const x0 = margin;
+        const lineHeight = 25;
+
+        function row(cells, header = false) {
+          ctx.font = header ? "bold 22px Arial, sans-serif" : "21px Arial, sans-serif";
+          const wrapped = cells.map((cell, i) => canvasTextLines(ctx, cell, widths[i] - 18));
+          const rowH = Math.max(42, Math.max(...wrapped.map(lines => lines.length)) * lineHeight + 18);
+          ensureSpace(rowH + 2);
+          let x = x0;
+          ctx.fillStyle = header ? "#eef4ef" : "#ffffff";
+          ctx.fillRect(x0, y, tableWidth, rowH);
+          ctx.strokeStyle = "#cfd7d1";
+          ctx.strokeRect(x0, y, tableWidth, rowH);
+          cells.forEach((cell, i) => {
+            ctx.strokeRect(x, y, widths[i], rowH);
+            ctx.fillStyle = "#1f2a2c";
+            wrapped[i].forEach((line, lineIndex) => ctx.fillText(line, x + 9, y + 9 + lineIndex * lineHeight));
+            x += widths[i];
+          });
+          y += rowH;
+        }
+
+        row(headers, true);
+        if (rows.length) rows.forEach(item => row(item));
+        else row(["暂无数据", "", "", ""].slice(0, headers.length));
+        y += 28;
+      }
+
+      newPage();
+      drawText(`${athlete.name || "运动员"}训练成功率报告`, margin, "bold 42px Arial, sans-serif");
+      y += 58;
+      drawText(`导出日期：${today()}`, margin, "24px Arial, sans-serif", "#657274");
+      y += 36;
+      drawText(`统计范围：${range.from} 至 ${range.to}`, margin, "24px Arial, sans-serif", "#657274");
+      y += 36;
+      drawText(`项目：${athlete.sport || "-"}`, margin, "24px Arial, sans-serif", "#657274");
+      y += 54;
+
+      const boxes = [
+        ["总整套次数", totalAttempts],
+        ["总成功", totalSuccess],
+        ["总成功率", `${totalRate}%`],
+        ["记录数", records.length]
+      ];
+      const boxW = 250;
+      boxes.forEach((box, index) => {
+        const x = margin + index * (boxW + 24);
+        ctx.strokeStyle = "#cfd7d1";
+        ctx.strokeRect(x, y, boxW, 100);
+        ctx.font = "bold 34px Arial, sans-serif";
+        ctx.fillStyle = "#1f2a2c";
+        ctx.fillText(String(box[1]), x + 16, y + 14);
+        ctx.font = "20px Arial, sans-serif";
+        ctx.fillStyle = "#657274";
+        ctx.fillText(box[0], x + 16, y + 62);
+      });
+      y += 140;
+
+      const groupRows = field => groupAttempts(attempts, field).map(group => [group.name, group.attempts, group.successes, `${group.rate}%`]);
+      const countRows = mode => groupDeductionsByProject(attempts, mode)
+        .flatMap(group => group.items.map((item, index) => [
+          index === 0 ? group.project : "",
+          item.name,
+          `${item.count}次`
+        ]));
+      drawTable("按项目成功率", ["项目", "整套次数", "成功", "成功率"], groupRows("difficulty"), [420, 180, 180, 180]);
+      drawTable("按项目扣分点次数", ["项目", "扣分点", "次数"], countRows("point"), [320, 430, 160]);
+      drawTable("按项目扣分动作次数", ["项目", "扣分动作", "次数"], countRows("action"), [320, 430, 160]);
+
+      drawTable("历史记录", ["日期", "项目", "整套/动作", "整套次数", "成功", "成功率", "扣分点", "扣分动作", "备注"], records.map(item => [
+        item.date || "",
+        item.difficulty || "",
+        item.skill || "",
+        item.attempts || 0,
+        item.successes || 0,
+        `${Math.round((Number(item.successes || 0) / Math.max(1, Number(item.attempts || 1))) * 100)}%`,
+        item.deduction || "-",
+        item.deductionAction || "-",
+        item.notes || ""
+      ]), [130, 110, 145, 70, 70, 85, 90, 150, 280]);
+
+      return canvases;
+    }
+
+    function createPdfReport(range = getPdfRange()) {
+      const canvases = buildPdfCanvases(range);
+      const blob = makePdfBlobFromCanvases(canvases);
+      return {
+        blob,
+        filename: `${currentAthlete().name || "运动员"}训练成功率报告-${range.from}至${range.to}.pdf`
+      };
+    }
+
+    function refreshPdfPreview() {
+      const report = createPdfReport(getPdfRange());
+      setLatestPdf(report.blob, report.filename);
+      return report;
+    }
+
+    async function downloadPdfReport() {
+      const report = createPdfReport(getPdfRange());
+      await savePdfBlob(report.blob, report.filename);
+    }
+
+    function exportPdfReport() {
+      openPdfDialog();
+      refreshPdfPreview();
+    }
+
+    let editingAttemptId = "";
+
+    function openPdfDialog() {
+      syncPdfRangeInputs(getSelectedRange());
+      document.getElementById("pdfDialog").classList.add("open");
+    }
+
+    function openAttemptEditDialog(id) {
+      const athlete = currentAthlete();
+      const item = (athlete.attempts || []).find(record => record.id === id);
+      if (!item) return;
+      editingAttemptId = id;
+      setFormValues(document.getElementById("editAttemptForm"), item);
+      document.getElementById("editAttemptDialog").classList.add("open");
+    }
+
+    function closeAttemptEditDialog() {
+      editingAttemptId = "";
+      document.getElementById("editAttemptDialog").classList.remove("open");
+    }
+
+    function newAthlete() {
+      return {
+        id: uid(),
+        name: "新运动员",
+        gender: "女",
+        birthDate: "",
+        sport: "",
+        height: "",
+        weight: "",
+        contact: "",
+        notes: "",
+        results: [],
+        summaries: [],
+        plans: [],
+        attempts: []
+      };
+    }
+
+    document.getElementById("addAthlete").addEventListener("click", () => {
+      const athlete = newAthlete();
+      state.athletes.push(athlete);
+      state.selectedId = athlete.id;
+      render();
+    });
+
+    document.getElementById("athleteList").addEventListener("click", event => {
+      const button = event.target.closest("[data-select]");
+      if (!button) return;
+      state.selectedId = button.dataset.select;
+      render();
+    });
+
+    document.getElementById("profileForm").addEventListener("submit", event => {
+      event.preventDefault();
+      Object.assign(currentAthlete(), getFormData(event.currentTarget));
+      render();
+    });
+
+    document.getElementById("deleteAthlete").addEventListener("click", () => {
+      const athlete = currentAthlete();
+      if (state.athletes.length <= 1) {
+        alert("至少保留一名运动员。");
+        return;
+      }
+      if (!confirm(`删除 ${athlete.name || "当前运动员"} 及其全部记录？`)) return;
+      state.athletes = state.athletes.filter(a => a.id !== athlete.id);
+      state.selectedId = state.athletes[0]?.id;
+      render();
+    });
+
+    document.querySelector(".tabs").addEventListener("click", event => {
+      const tab = event.target.closest("[data-tab]");
+      if (!tab) return;
+      document.querySelectorAll(".tab").forEach(button => button.classList.toggle("active", button === tab));
+      document.querySelectorAll(".tab-view").forEach(view => view.classList.toggle("active", view.id === tab.dataset.tab));
+    });
+
+    function bindRecordForm(formId, collection, transform = data => data) {
+      const form = document.getElementById(formId);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const athlete = currentAthlete();
+        const data = transform(getFormData(form));
+        athlete[collection] = athlete[collection] || [];
+        athlete[collection].push({ id: uid(), ...data });
+        form.reset();
+        [...form.querySelectorAll("input[type=date]")].forEach(input => input.value = today());
+        const attemptsInput = form.querySelector("[name=attempts]");
+        const successesInput = form.querySelector("[name=successes]");
+        if (attemptsInput) attemptsInput.value = "10";
+        if (successesInput) successesInput.value = "7";
+        render();
+      });
+    }
+
+    bindRecordForm("resultForm", "results");
+    bindRecordForm("summaryForm", "summaries");
+    bindRecordForm("planForm", "plans");
+    bindRecordForm("attemptForm", "attempts", data => {
+      const attempts = Math.max(1, Number(data.attempts || 1));
+      const successes = Math.min(attempts, Math.max(0, Number(data.successes || 0)));
+      return { ...data, attempts, successes };
+    });
+
+    document.addEventListener("click", event => {
+      const editButton = event.target.closest("[data-edit]");
+      if (editButton) {
+        event.preventDefault();
+        const [collection, id] = editButton.dataset.edit.split(":");
+        if (collection === "attempts") openAttemptEditDialog(id);
+        return;
+      }
+
+      const button = event.target.closest("[data-delete]");
+      if (!button) return;
+      event.preventDefault();
+      const [collection, id] = button.dataset.delete.split(":");
+      const athlete = currentAthlete();
+      if (!["results", "summaries", "plans", "attempts"].includes(collection)) return;
+      athlete[collection] = (athlete[collection] || []).filter(item => item.id !== id);
+      render();
+    });
+
+    let latestExportJson = "";
+
+    function downloadJson(json) {
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `运动员管理数据-${today()}.json`;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function openExportDialog(json) {
+      latestExportJson = json;
+      const dialog = document.getElementById("exportDialog");
+      const text = document.getElementById("exportText");
+      text.value = json;
+      dialog.classList.add("open");
+      text.focus();
+      text.select();
+    }
+
+    document.getElementById("exportData").addEventListener("click", () => {
+      const json = JSON.stringify(state, null, 2);
+      downloadJson(json);
+      openExportDialog(json);
+    });
+
+    document.getElementById("downloadExport").addEventListener("click", () => {
+      downloadJson(latestExportJson || JSON.stringify(state, null, 2));
+    });
+
+    document.getElementById("copyExport").addEventListener("click", async () => {
+      const text = document.getElementById("exportText");
+      text.focus();
+      text.select();
+      try {
+        await navigator.clipboard.writeText(text.value);
+        alert("已复制导出数据。");
+      } catch (error) {
+        document.execCommand("copy");
+        alert("已选中导出数据，可手动复制。");
+      }
+    });
+
+    document.getElementById("closeExport").addEventListener("click", () => {
+      document.getElementById("exportDialog").classList.remove("open");
+    });
+
+    document.getElementById("exportPdf").addEventListener("click", exportPdfReport);
+
+    document.getElementById("generatePdf").addEventListener("click", () => {
+      refreshPdfPreview();
+    });
+
+    document.getElementById("downloadPdf").addEventListener("click", async () => {
+      const report = refreshPdfPreview();
+      await savePdfBlob(report.blob, report.filename);
+    });
+
+    document.getElementById("closePdf").addEventListener("click", () => {
+      document.getElementById("pdfDialog").classList.remove("open");
+    });
+
+    document.getElementById("cancelEditAttempt").addEventListener("click", closeAttemptEditDialog);
+
+    document.getElementById("editAttemptForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const athlete = currentAthlete();
+      const index = (athlete.attempts || []).findIndex(item => item.id === editingAttemptId);
+      if (index < 0) return;
+      const data = getFormData(event.currentTarget);
+      const attempts = Math.max(1, Number(data.attempts || 1));
+      const successes = Math.min(attempts, Math.max(0, Number(data.successes || 0)));
+      athlete.attempts[index] = {
+        ...athlete.attempts[index],
+        ...data,
+        attempts,
+        successes
+      };
+      closeAttemptEditDialog();
+      render();
+    });
+
+    document.getElementById("importData").addEventListener("click", () => {
+      document.getElementById("importFile").click();
+    });
+
+    document.getElementById("importFile").addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const next = JSON.parse(reader.result);
+          if (!Array.isArray(next.athletes)) throw new Error("数据格式不正确");
+          state = next;
+          state.selectedId = state.selectedId || state.athletes[0]?.id;
+          render();
+        } catch (error) {
+          alert("导入失败，请选择本软件导出的 JSON 文件。");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    });
+
+    document.getElementById("statRangeMode").addEventListener("change", () => {
+      syncStatRangeInputs();
+      renderStats(currentAthlete());
+    });
+
+    document.getElementById("statFrom").addEventListener("change", () => renderStats(currentAthlete()));
+    document.getElementById("statTo").addEventListener("change", () => renderStats(currentAthlete()));
+
+    document.querySelectorAll("input[type=date]").forEach(input => {
+      if (!input.value) input.value = today();
+    });
+    syncStatRangeInputs();
+
+    render();
+  </script>
+</body>
+</html>
+        <label>整套次数
+          <select name="attempts" required>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>7</option>
+            <option>8</option>
+            <option>9</option>
+            <option>10</option>
+          </select>
+        </label>
+        <label>成功次数
+          <select name="successes" required>
+            <option>0</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>7</option>
+            <option>8</option>
+            <option>9</option>
+            <option>10</option>
+          </select>
+        </label>
+        <label>备注<textarea name="notes" placeholder="失败原因、保护方式、下次调整"></textarea></label>
+        <div class="export-actions">
+          <button class="secondary" id="cancelEditAttempt" type="button">取消</button>
+          <button class="primary" type="submit">保存更改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = "athlete-manager-v9";
+    const toLocalIso = date => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const today = () => toLocalIso(new Date());
+    const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+
+    const icons = {
+      trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>'
+    };
+
+    const deductionLabels = {
+      "70A": "70A（晃动）",
+      "70B": "70B（移动/跳动）",
+      "30": "30（未过肩）",
+      "31": "31（正踢腿弯曲或小于135度）",
+      "22": "22（雀地龙夹角小于45度）"
+    };
+
+    function normalizeDeductionLabel(value) {
+      return deductionLabels[value] || value || "无";
+    }
+
+    function normalizeStateData(data) {
+      (data.athletes || []).forEach(athlete => {
+        (athlete.attempts || []).forEach(item => {
+          item.deduction = normalizeDeductionLabel(item.deduction);
+        });
+      });
+      return data;
+    }
+
+    const sampleData = {
+      selectedId: "a1",
+      athletes: [{
+        id: "a1",
+        name: "芝宁",
+        gender: "女",
+        birthDate: "",
+        sport: "武术",
+        height: "",
+        weight: "",
+        contact: "",
+        notes: "已导入《芝宁太极训练成功率统计》PDF 明细。",
+        results: [],
+        summaries: [],
+        plans: [],
+        attempts: [
+          { id: uid(), date: "2026-03-02", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-03", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-04", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-05", skill: "整套完成", difficulty: "太极拳", deduction: "70A", deductionAction: "腾空正踢腿", attempts: 2, successes: 1, notes: "正踢扣70a" },
+          { id: uid(), date: "2026-03-05", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-06", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-06", skill: "整套完成", difficulty: "太极扇", deduction: "70A", deductionAction: "腾空正踢腿", attempts: 2, successes: 1, notes: "正踢扣70a" },
+          { id: uid(), date: "2026-03-11", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-12", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "腾空正踢腿", attempts: 3, successes: 2, notes: "正踢扣踩地" },
+          { id: uid(), date: "2026-03-12", skill: "整套完成", difficulty: "太极扇", deduction: "70A", deductionAction: "腾空正踢腿", attempts: 3, successes: 2, notes: "正踢扣70a" },
+          { id: uid(), date: "2026-03-17", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-17", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 1, successes: 0, notes: "站不稳" },
+          { id: uid(), date: "2026-03-18", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "第二套可扣可不扣" },
+          { id: uid(), date: "2026-03-27", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 3, successes: 3, notes: "" },
+          { id: uid(), date: "2026-03-30", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-03-31", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 3, successes: 2, notes: "起跳往右边" },
+          { id: uid(), date: "2026-04-02", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-07", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-09", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 1, notes: "登地突然往右边" },
+          { id: uid(), date: "2026-04-09", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 3, successes: 0, notes: "" },
+          { id: uid(), date: "2026-04-13", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-14", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-15", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-15", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-16", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 2, successes: 2, notes: "" },
+          { id: uid(), date: "2026-04-16", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-16", skill: "整套完成", difficulty: "太极剑", deduction: "70A", deductionAction: "无", attempts: 1, successes: 0, notes: "70a" },
+          { id: uid(), date: "2026-04-20", skill: "整套完成", difficulty: "太极拳", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-21", skill: "整套完成", difficulty: "太极扇", deduction: "无", deductionAction: "无", attempts: 1, successes: 1, notes: "" },
+          { id: uid(), date: "2026-04-22", skill: "整套完成", difficulty: "太极剑", deduction: "无", deductionAction: "无", attempts: 1, successes: 0, notes: "" }
+        ]
+      }]
+    };
+
+    let state = load();
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) return normalizeStateData(JSON.parse(raw));
+      } catch (error) {
+        console.warn(error);
+      }
+      return normalizeStateData(structuredClone(sampleData));
+    }
+
+    function save() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function currentAthlete() {
+      return state.athletes.find(a => a.id === state.selectedId) || state.athletes[0];
+    }
+
+    function setFormValues(form, data) {
+      [...form.elements].forEach(el => {
+        if (!el.name) return;
+        el.value = data[el.name] ?? "";
+      });
+    }
+
+    function getFormData(form) {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, match => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[match]));
+    }
+
+    function initials(name) {
+      return (name || "新").slice(0, 1).toUpperCase();
+    }
+
+    function ageFromDate(date) {
+      if (!date) return "";
+      const diff = new Date(Date.now() - new Date(date).getTime());
+      return Math.abs(diff.getUTCFullYear() - 1970);
+    }
+
+    function render() {
+      if (!state.athletes.length) {
+        const athlete = newAthlete();
+        state.athletes.push(athlete);
+        state.selectedId = athlete.id;
+      }
+      const athlete = currentAthlete();
+      state.selectedId = athlete.id;
+      save();
+      renderAthletes(athlete);
+      renderProfile(athlete);
+      renderRecords(athlete);
+      renderStats(athlete);
+    }
+
+    function renderAthletes(active) {
+      document.getElementById("athleteList").innerHTML = state.athletes.map(a => `
+        <button class="athlete-item ${a.id === active.id ? "active" : ""}" data-select="${a.id}" title="切换到 ${escapeHtml(a.name)}">
+          <span class="avatar">${escapeHtml(initials(a.name))}</span>
+          <span>
+            <span class="athlete-name">${escapeHtml(a.name || "未命名")}</span>
+            <span class="athlete-meta">${escapeHtml(a.sport || "未填写项目")}</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+      `).join("");
+    }
+
+    function renderProfile(athlete) {
+      document.getElementById("currentName").textContent = athlete.name || "未命名运动员";
+      const age = ageFromDate(athlete.birthDate);
+      document.getElementById("currentSummary").textContent = [
+        athlete.sport,
+        age ? `${age} 岁` : ""
+      ].filter(Boolean).join(" · ") || "完善个人信息后，这里会显示核心摘要";
+      setFormValues(document.getElementById("profileForm"), athlete);
+    }
+
+    function recordShell(items, emptyText, mapper) {
+      if (!items.length) return `<div class="empty">${emptyText}</div>`;
+      return [...items].sort((a, b) => (b.date || b.startDate || "").localeCompare(a.date || a.startDate || "")).map(mapper).join("");
+    }
+
+    function renderRecords(athlete) {
+      document.getElementById("resultList").innerHTML = recordShell(athlete.results || [], "还没有比赛成绩记录", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.event)}</p>
+              <p class="record-detail">${escapeHtml(item.date)} · ${escapeHtml(item.discipline || "未填项目")}</p>
+            </div>
+            <button class="delete-btn" type="button" data-delete="results:${item.id}" title="删除成绩">${icons.trash}删除</button>
+          </div>
+          <div class="tag-row">
+            <span class="tag">成绩 ${escapeHtml(item.score || "-")}</span>
+            <span class="tag court">名次 ${escapeHtml(item.rank || "-")}</span>
+          </div>
+          ${item.notes ? `<p class="record-detail">${escapeHtml(item.notes)}</p>` : ""}
+        </article>
+      `);
+
+      document.getElementById("summaryList").innerHTML = recordShell(athlete.summaries || [], "还没有总结报告", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.focus)}</p>
+              <p class="record-detail">${escapeHtml(item.date)}</p>
+            </div>
+            <button class="delete-btn" type="button" data-delete="summaries:${item.id}" title="删除报告">${icons.trash}删除</button>
+          </div>
+          <div class="tag-row"><span class="tag blue">疲劳 ${escapeHtml(item.fatigue)}</span></div>
+          ${item.content ? `<p class="record-detail">${escapeHtml(item.content)}</p>` : ""}
+        </article>
+      `);
+
+      document.getElementById("planList").innerHTML = recordShell(athlete.plans || [], "还没有训练计划", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.goal)}</p>
+              <p class="record-detail">${escapeHtml(item.startDate)}${item.endDate ? ` 至 ${escapeHtml(item.endDate)}` : ""}</p>
+            </div>
+            <button class="delete-btn" type="button" data-delete="plans:${item.id}" title="删除计划">${icons.trash}删除</button>
+          </div>
+          <div class="tag-row"><span class="tag">${escapeHtml(item.status)}</span></div>
+          ${item.tasks ? `<p class="record-detail">${escapeHtml(item.tasks)}</p>` : ""}
+        </article>
+      `);
+
+      document.getElementById("attemptList").innerHTML = recordShell(athlete.attempts || [], "还没有项目动作记录", item => `
+        <article class="record">
+          <div class="record-top">
+            <div>
+              <p class="record-title">${escapeHtml(item.skill)}</p>
+              <p class="record-detail">${escapeHtml(item.date)} · 项目 ${escapeHtml(item.difficulty)}</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="edit-btn" type="button" data-edit="attempts:${item.id}" title="更改统计">更改</button>
+              <button class="delete-btn" type="button" data-delete="attempts:${item.id}" title="删除统计">${icons.trash}删除</button>
+            </div>
+          </div>
+          <div class="tag-row">
+            <span class="tag">整套次数 ${escapeHtml(item.attempts)}</span>
+            <span class="tag court">成功 ${escapeHtml(item.successes)}</span>
+            <span class="tag blue">${Math.round((item.successes / item.attempts) * 100)}%</span>
+            <span class="tag">扣分点 ${escapeHtml(item.deduction || "-")}</span>
+            <span class="tag">扣分动作 ${escapeHtml(item.deductionAction || "-")}</span>
+          </div>
+          ${item.notes ? `<p class="record-detail">${escapeHtml(item.notes)}</p>` : ""}
+        </article>
+      `);
+    }
+
+    function renderStats(athlete) {
+      const allAttempts = athlete.attempts || [];
+      const range = getSelectedRange();
+      const attempts = filterAttemptsByRange(allAttempts, range);
+      const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
+      const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
+      const rate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
+      const projectGroups = groupAttempts(attempts, "difficulty");
+      const deductionGroups = groupDeductionsByProject(attempts, "point");
+      const deductionActionGroups = groupDeductionsByProject(attempts, "action");
+      const best = [...projectGroups].sort((a, b) => b.rate - a.rate)[0];
+      document.getElementById("periodSummary").textContent = `${range.label}：${range.from} 至 ${range.to}`;
+
+      document.getElementById("metricGrid").innerHTML = [
+        ["范围整套次数", totalAttempts],
+        ["范围成功", totalSuccess],
+        ["范围成功率", `${rate}%`],
+        ["最佳项目", best ? `${best.name} ${best.rate}%` : "-"]
+      ].map(([label, value]) => `
+        <div class="metric">
+          <div class="metric-value">${escapeHtml(value)}</div>
+          <div class="metric-label">${escapeHtml(label)}</div>
+        </div>
+      `).join("");
+
+      document.getElementById("difficultyChart").innerHTML = renderGroupChart(projectGroups, "记录项目动作后自动生成项目成功率");
+      document.getElementById("deductionChart").innerHTML = renderProjectCountList(deductionGroups, "这个时间范围内没有扣分点记录");
+      document.getElementById("deductionActionChart").innerHTML = renderProjectCountList(deductionActionGroups, "这个时间范围内没有扣分动作记录");
+    }
+
+    function getPeriodRange(mode) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const end = new Date(start);
+      if (mode === "week") {
+        const mondayOffset = (start.getDay() + 6) % 7;
+        start.setDate(start.getDate() - mondayOffset);
+        end.setTime(start.getTime());
+        end.setDate(start.getDate() + 6);
+        return { from: toLocalIso(start), to: toLocalIso(end), label: "本周" };
+      }
+      if (mode === "month") {
+        start.setDate(1);
+        end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
+        return { from: toLocalIso(start), to: toLocalIso(end), label: "本月" };
+      }
+      if (mode === "year") {
+        start.setMonth(0, 1);
+        end.setFullYear(start.getFullYear(), 11, 31);
+        return { from: toLocalIso(start), to: toLocalIso(end), label: "本年" };
+      }
+      return { from: today(), to: today(), label: "自定义" };
+    }
+
+    function syncStatRangeInputs() {
+      const mode = document.getElementById("statRangeMode").value;
+      const fromInput = document.getElementById("statFrom");
+      const toInput = document.getElementById("statTo");
+      const isCustom = mode === "custom";
+      if (!isCustom) {
+        const range = getPeriodRange(mode);
+        fromInput.value = range.from;
+        toInput.value = range.to;
+      } else {
+        fromInput.value = fromInput.value || today();
+        toInput.value = toInput.value || today();
+      }
+      fromInput.disabled = !isCustom;
+      toInput.disabled = !isCustom;
+    }
+
+    function getSelectedRange() {
+      const mode = document.getElementById("statRangeMode").value;
+      if (mode !== "custom") return getPeriodRange(mode);
+      let from = document.getElementById("statFrom").value || today();
+      let to = document.getElementById("statTo").value || today();
+      if (from > to) [from, to] = [to, from];
+      return { from, to, label: "自定义" };
+    }
+
+    function filterAttemptsByRange(attempts, range) {
+      return attempts.filter(item => {
+        const date = item.date || "";
+        return date >= range.from && date <= range.to;
+      });
+    }
+
+    function renderGroupChart(groups, emptyText) {
+      return groups.length ? groups.map(group => `
+        <div class="bar-row">
+          <span>${escapeHtml(group.name)}</span>
+          <div class="bar-track"><div class="bar" style="width:${group.rate}%"></div></div>
+          <span>${group.rate}%</span>
+        </div>
+      `).join("") : `<div class="empty">${emptyText}</div>`;
+    }
+
+    function renderProjectCountList(groups, emptyText) {
+      if (!groups.length) return `<div class="empty">${emptyText}</div>`;
+      return `<div class="count-list">${groups.map(group => `
+        <div class="count-group">
+          <p class="count-group-title">${escapeHtml(group.project)}</p>
+          <div class="count-items">
+            ${group.items.map(item => `<span class="tag court">${escapeHtml(item.name)} ${escapeHtml(item.count)}次</span>`).join("")}
+          </div>
+        </div>
+      `).join("")}</div>`;
+    }
+
+    function groupAttempts(attempts, field) {
+      const map = new Map();
+      attempts.forEach(item => {
+        const key = item[field] || "-";
+        const prev = map.get(key) || { name: key, attempts: 0, successes: 0 };
+        prev.attempts += Number(item.attempts || 0);
+        prev.successes += Number(item.successes || 0);
+        map.set(key, prev);
+      });
+      return [...map.values()]
+        .map(item => ({ ...item, rate: item.attempts ? Math.round(item.successes / item.attempts * 100) : 0 }))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+    }
+
+    function groupDeductionsByProject(attempts, mode) {
+      const projectMap = new Map();
+      attempts.forEach(item => {
+        const deduction = item.deduction || "无";
+        const action = item.deductionAction || "无";
+        if (deduction === "无" && action === "无") return;
+        if (mode === "point" && deduction === "无") return;
+        if (mode === "action" && action === "无") return;
+
+        const project = item.difficulty || "-";
+        const count = Math.max(1, Number(item.attempts || 0) - Number(item.successes || 0));
+        const name = mode === "action"
+          ? `${action}${deduction !== "无" ? deduction : ""}`
+          : deduction;
+        const itemMap = projectMap.get(project) || new Map();
+        itemMap.set(name, (itemMap.get(name) || 0) + count);
+        projectMap.set(project, itemMap);
+      });
+
+      return [...projectMap.entries()]
+        .map(([project, itemMap]) => ({
+          project,
+          items: [...itemMap.entries()]
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "zh-CN"))
+        }))
+        .sort((a, b) => a.project.localeCompare(b.project, "zh-CN"));
+    }
+
+    function pdfTableRows(groups) {
+      if (!groups.length) return `<tr><td colspan="4">暂无数据</td></tr>`;
+      return groups.map(group => `
+        <tr>
+          <td>${escapeHtml(group.name)}</td>
+          <td>${escapeHtml(group.attempts)}</td>
+          <td>${escapeHtml(group.successes)}</td>
+          <td>${escapeHtml(group.rate)}%</td>
+        </tr>
+      `).join("");
+    }
+
+    function pdfProjectCountRows(groups) {
+      if (!groups.length) return `<tr><td colspan="3">暂无数据</td></tr>`;
+      return groups.flatMap(group => group.items.map((item, index) => `
+        <tr>
+          <td>${index === 0 ? escapeHtml(group.project) : ""}</td>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.count)}次</td>
+        </tr>
+      `)).join("");
+    }
+
+    function buildPdfReportHtml(autoPrint = false) {
+      const athlete = currentAthlete();
+      const attempts = athlete.attempts || [];
+      const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
+      const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
+      const totalRate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
+      const records = [...attempts].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      const rows = records.map(item => `
+        <tr>
+          <td>${escapeHtml(item.date || "")}</td>
+          <td>${escapeHtml(item.difficulty || "")}</td>
+          <td>${escapeHtml(item.skill || "")}</td>
+          <td>${escapeHtml(item.attempts || 0)}</td>
+          <td>${escapeHtml(item.successes || 0)}</td>
+          <td>${Math.round((Number(item.successes || 0) / Math.max(1, Number(item.attempts || 1))) * 100)}%</td>
+          <td>${escapeHtml(item.deduction || "-")}</td>
+          <td>${escapeHtml(item.deductionAction || "-")}</td>
+          <td>${escapeHtml(item.notes || "")}</td>
+        </tr>
+      `).join("");
+      return `<!doctype html>
+        <html lang="zh-CN">
+        <head>
+          <meta charset="utf-8">
+          <title>${escapeHtml(athlete.name || "运动员")}训练成功率报告</title>
+          <style>
+            body { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; color: #1f2a2c; margin: 28px; }
+            h1 { margin: 0 0 6px; font-size: 24px; }
+            h2 { margin: 22px 0 8px; font-size: 16px; }
+            p { margin: 4px 0; color: #657274; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+            th, td { border: 1px solid #cfd7d1; padding: 6px 7px; text-align: left; vertical-align: top; }
+            th { background: #eef4ef; }
+            .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+            .box { border: 1px solid #cfd7d1; padding: 10px; }
+            .value { font-size: 20px; font-weight: 800; }
+            @media print { body { margin: 14mm; } button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <h1>${escapeHtml(athlete.name || "运动员")}训练成功率报告</h1>
+          <p>导出日期：${today()}</p>
+          <p>项目：${escapeHtml(athlete.sport || "-")}</p>
+          <div class="summary">
+            <div class="box"><div class="value">${totalAttempts}</div><p>总整套次数</p></div>
+            <div class="box"><div class="value">${totalSuccess}</div><p>总成功</p></div>
+            <div class="box"><div class="value">${totalRate}%</div><p>总成功率</p></div>
+            <div class="box"><div class="value">${records.length}</div><p>记录数</p></div>
+          </div>
+          <h2>按项目成功率</h2>
+          <table><thead><tr><th>项目</th><th>整套次数</th><th>成功</th><th>成功率</th></tr></thead><tbody>${pdfTableRows(groupAttempts(attempts, "difficulty"))}</tbody></table>
+          <h2>按项目扣分点次数</h2>
+          <table><thead><tr><th>项目</th><th>扣分点</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "point"))}</tbody></table>
+          <h2>按项目扣分动作次数</h2>
+          <table><thead><tr><th>项目</th><th>扣分动作</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "action"))}</tbody></table>
+          <h2>历史记录</h2>
+          <table>
+            <thead><tr><th>日期</th><th>项目</th><th>整套/动作</th><th>整套次数</th><th>成功</th><th>成功率</th><th>扣分点</th><th>扣分动作</th><th>备注</th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="9">暂无记录</td></tr>`}</tbody>
+          </table>
+          ${autoPrint ? `<script>window.addEventListener("load", () => setTimeout(() => window.print(), 300));<\/script>` : ""}
+        </body>
+        </html>`;
+    }
+
+    function canvasTextLines(ctx, text, maxWidth) {
+      const value = String(text ?? "-");
+      const lines = [];
+      let line = "";
+      for (const char of value) {
+        const next = line + char;
+        if (ctx.measureText(next).width > maxWidth && line) {
+          lines.push(line);
+          line = char;
+        } else {
+          line = next;
+        }
+      }
+      lines.push(line || "");
+      return lines;
+    }
+
+    let latestPdfUrl = "";
+    let latestPdfFilename = "";
+    let latestPdfBlob = null;
+
+    function getPdfRange() {
+      const fromInput = document.getElementById("pdfFrom");
+      const toInput = document.getElementById("pdfTo");
+      const fallback = getSelectedRange();
+      let from = fromInput?.value || fallback.from || today();
+      let to = toInput?.value || fallback.to || today();
+      if (from > to) [from, to] = [to, from];
+      return { from, to };
+    }
+
+    function syncPdfRangeInputs(range = getSelectedRange()) {
+      const fromInput = document.getElementById("pdfFrom");
+      const toInput = document.getElementById("pdfTo");
+      if (fromInput) fromInput.value = range.from;
+      if (toInput) toInput.value = range.to;
+    }
+
+    function setLatestPdf(blob, filename) {
+      if (latestPdfUrl) URL.revokeObjectURL(latestPdfUrl);
+      latestPdfUrl = URL.createObjectURL(blob);
+      latestPdfFilename = filename;
+      latestPdfBlob = blob;
+      const openLink = document.getElementById("openPdf");
+      const frame = document.getElementById("pdfFrame");
+      openLink.href = latestPdfUrl;
+      openLink.download = filename;
+      frame.src = latestPdfUrl;
+      document.getElementById("pdfDialog").classList.add("open");
+    }
+
+    function directDownloadPdf(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function savePdfBlob(blob, filename) {
+      setLatestPdf(blob, filename);
+
+      try {
+        if (window.showSaveFilePicker) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: "PDF 文件",
+              accept: { "application/pdf": [".pdf"] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          alert("PDF已保存。");
+          return;
+        }
+
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], filename, { type: "application/pdf" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "训练成功率报告"
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        if (error && error.name === "AbortError") return;
+        console.warn("保存PDF失败，改用普通下载。", error);
+      }
+
+      directDownloadPdf(blob, filename);
+    }
+
+    function makePdfBlobFromCanvases(canvases) {
+      const pageW = 595.28;
+      const pageH = 841.89;
+      const objects = [];
+      const pages = [];
+
+      canvases.forEach((canvas, index) => {
+        const imageBinary = atob(canvas.toDataURL("image/jpeg", 0.92).split(",")[1]);
+        const pageObj = 3 + index * 3;
+        const contentObj = pageObj + 1;
+        const imageObj = pageObj + 2;
+        pages.push(pageObj);
+        objects[pageObj] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im${index} ${imageObj} 0 R >> >> /Contents ${contentObj} 0 R >>`;
+        const stream = `q ${pageW} 0 0 ${pageH} 0 0 cm /Im${index} Do Q`;
+        objects[contentObj] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+        objects[imageObj] = `<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBinary.length} >>\nstream\n${imageBinary}\nendstream`;
+      });
+
+      objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+      objects[2] = `<< /Type /Pages /Kids [${pages.map(id => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      for (let i = 1; i < objects.length; i++) {
+        offsets[i] = pdf.length;
+        pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`;
+      }
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+      for (let i = 1; i < objects.length; i++) {
+        pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+      }
+      pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      const bytes = new Uint8Array(pdf.length);
+      for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 255;
+      return new Blob([bytes], { type: "application/pdf" });
+    }
+
+    function buildPdfCanvases(range = getPdfRange()) {
+      const athlete = currentAthlete();
+      const attempts = filterAttemptsByRange(athlete.attempts || [], range);
+      const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
+      const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
+      const totalRate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
+      const records = [...attempts].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      const canvases = [];
+      const width = 1240;
+      const height = 1754;
+      const margin = 70;
+      let canvas;
+      let ctx;
+      let y;
+
+      function newPage() {
+        canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#1f2a2c";
+        ctx.textBaseline = "top";
+        y = margin;
+        canvases.push(canvas);
+      }
+
+      function ensureSpace(needed) {
+        if (y + needed > height - margin) newPage();
+      }
+
+      function drawText(text, x, font, color = "#1f2a2c") {
+        ctx.font = font;
+        ctx.fillStyle = color;
+        ctx.fillText(String(text ?? ""), x, y);
+      }
+
+      function drawTable(title, headers, rows, widths) {
+        ensureSpace(110);
+        ctx.font = "bold 30px Arial, sans-serif";
+        ctx.fillStyle = "#1f2a2c";
+        ctx.fillText(title, margin, y);
+        y += 46;
+        const tableWidth = widths.reduce((sum, item) => sum + item, 0);
+        const x0 = margin;
+        const lineHeight = 25;
+
+        function row(cells, header = false) {
+          ctx.font = header ? "bold 22px Arial, sans-serif" : "21px Arial, sans-serif";
+          const wrapped = cells.map((cell, i) => canvasTextLines(ctx, cell, widths[i] - 18));
+          const rowH = Math.max(42, Math.max(...wrapped.map(lines => lines.length)) * lineHeight + 18);
+          ensureSpace(rowH + 2);
+          let x = x0;
+          ctx.fillStyle = header ? "#eef4ef" : "#ffffff";
+          ctx.fillRect(x0, y, tableWidth, rowH);
+          ctx.strokeStyle = "#cfd7d1";
+          ctx.strokeRect(x0, y, tableWidth, rowH);
+          cells.forEach((cell, i) => {
+            ctx.strokeRect(x, y, widths[i], rowH);
+            ctx.fillStyle = "#1f2a2c";
+            wrapped[i].forEach((line, lineIndex) => ctx.fillText(line, x + 9, y + 9 + lineIndex * lineHeight));
+            x += widths[i];
+          });
+          y += rowH;
+        }
+
+        row(headers, true);
+        if (rows.length) rows.forEach(item => row(item));
+        else row(["暂无数据", "", "", ""].slice(0, headers.length));
+        y += 28;
+      }
+
+      newPage();
+      drawText(`${athlete.name || "运动员"}训练成功率报告`, margin, "bold 42px Arial, sans-serif");
+      y += 58;
+      drawText(`导出日期：${today()}`, margin, "24px Arial, sans-serif", "#657274");
+      y += 36;
+      drawText(`统计范围：${range.from} 至 ${range.to}`, margin, "24px Arial, sans-serif", "#657274");
+      y += 36;
+      drawText(`项目：${athlete.sport || "-"}`, margin, "24px Arial, sans-serif", "#657274");
+      y += 54;
+
+      const boxes = [
+        ["总整套次数", totalAttempts],
+        ["总成功", totalSuccess],
+        ["总成功率", `${totalRate}%`],
+        ["记录数", records.length]
+      ];
+      const boxW = 250;
+      boxes.forEach((box, index) => {
+        const x = margin + index * (boxW + 24);
+        ctx.strokeStyle = "#cfd7d1";
+        ctx.strokeRect(x, y, boxW, 100);
+        ctx.font = "bold 34px Arial, sans-serif";
+        ctx.fillStyle = "#1f2a2c";
+        ctx.fillText(String(box[1]), x + 16, y + 14);
+        ctx.font = "20px Arial, sans-serif";
+        ctx.fillStyle = "#657274";
+        ctx.fillText(box[0], x + 16, y + 62);
+      });
+      y += 140;
+
+      const groupRows = field => groupAttempts(attempts, field).map(group => [group.name, group.attempts, group.successes, `${group.rate}%`]);
+      const countRows = mode => groupDeductionsByProject(attempts, mode)
+        .flatMap(group => group.items.map((item, index) => [
+          index === 0 ? group.project : "",
+          item.name,
+          `${item.count}次`
+        ]));
+      drawTable("按项目成功率", ["项目", "整套次数", "成功", "成功率"], groupRows("difficulty"), [420, 180, 180, 180]);
+      drawTable("按项目扣分点次数", ["项目", "扣分点", "次数"], countRows("point"), [320, 430, 160]);
+      drawTable("按项目扣分动作次数", ["项目", "扣分动作", "次数"], countRows("action"), [320, 430, 160]);
+
+      drawTable("历史记录", ["日期", "项目", "整套/动作", "整套次数", "成功", "成功率", "扣分点", "扣分动作", "备注"], records.map(item => [
+        item.date || "",
+        item.difficulty || "",
+        item.skill || "",
+        item.attempts || 0,
+        item.successes || 0,
+        `${Math.round((Number(item.successes || 0) / Math.max(1, Number(item.attempts || 1))) * 100)}%`,
+        item.deduction || "-",
+        item.deductionAction || "-",
+        item.notes || ""
+      ]), [130, 110, 145, 70, 70, 85, 90, 150, 280]);
+
+      return canvases;
+    }
+
+    function createPdfReport(range = getPdfRange()) {
+      const canvases = buildPdfCanvases(range);
+      const blob = makePdfBlobFromCanvases(canvases);
+      return {
+        blob,
+        filename: `${currentAthlete().name || "运动员"}训练成功率报告-${range.from}至${range.to}.pdf`
+      };
+    }
+
+    function refreshPdfPreview() {
+      const report = createPdfReport(getPdfRange());
+      setLatestPdf(report.blob, report.filename);
+      return report;
+    }
+
+    async function downloadPdfReport() {
+      const report = createPdfReport(getPdfRange());
+      await savePdfBlob(report.blob, report.filename);
+    }
+
+    function exportPdfReport() {
+      openPdfDialog();
+      refreshPdfPreview();
+    }
+
+    let editingAttemptId = "";
+
+    function openPdfDialog() {
+      syncPdfRangeInputs(getSelectedRange());
+      document.getElementById("pdfDialog").classList.add("open");
+    }
+
+    function openAttemptEditDialog(id) {
+      const athlete = currentAthlete();
+      const item = (athlete.attempts || []).find(record => record.id === id);
+      if (!item) return;
+      editingAttemptId = id;
+      setFormValues(document.getElementById("editAttemptForm"), item);
+      document.getElementById("editAttemptDialog").classList.add("open");
+    }
+
+    function closeAttemptEditDialog() {
+      editingAttemptId = "";
+      document.getElementById("editAttemptDialog").classList.remove("open");
+    }
+
+    function newAthlete() {
+      return {
+        id: uid(),
+        name: "新运动员",
+        gender: "女",
+        birthDate: "",
+        sport: "",
+        height: "",
+        weight: "",
+        contact: "",
+        notes: "",
+        results: [],
+        summaries: [],
+        plans: [],
+        attempts: []
+      };
+    }
+
+    document.getElementById("addAthlete").addEventListener("click", () => {
+      const athlete = newAthlete();
+      state.athletes.push(athlete);
+      state.selectedId = athlete.id;
+      render();
+    });
+
+    document.getElementById("athleteList").addEventListener("click", event => {
+      const button = event.target.closest("[data-select]");
+      if (!button) return;
+      state.selectedId = button.dataset.select;
+      render();
+    });
+
+    document.getElementById("profileForm").addEventListener("submit", event => {
+      event.preventDefault();
+      Object.assign(currentAthlete(), getFormData(event.currentTarget));
+      render();
+    });
+
+    document.getElementById("deleteAthlete").addEventListener("click", () => {
+      const athlete = currentAthlete();
+      if (state.athletes.length <= 1) {
+        alert("至少保留一名运动员。");
+        return;
+      }
+      if (!confirm(`删除 ${athlete.name || "当前运动员"} 及其全部记录？`)) return;
+      state.athletes = state.athletes.filter(a => a.id !== athlete.id);
+      state.selectedId = state.athletes[0]?.id;
+      render();
+    });
+
+    document.querySelector(".tabs").addEventListener("click", event => {
+      const tab = event.target.closest("[data-tab]");
+      if (!tab) return;
+      document.querySelectorAll(".tab").forEach(button => button.classList.toggle("active", button === tab));
+      document.querySelectorAll(".tab-view").forEach(view => view.classList.toggle("active", view.id === tab.dataset.tab));
+    });
+
+    function bindRecordForm(formId, collection, transform = data => data) {
+      const form = document.getElementById(formId);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        const athlete = currentAthlete();
+        const data = transform(getFormData(form));
+        athlete[collection] = athlete[collection] || [];
+        athlete[collection].push({ id: uid(), ...data });
+        form.reset();
+        [...form.querySelectorAll("input[type=date]")].forEach(input => input.value = today());
+        const attemptsInput = form.querySelector("[name=attempts]");
+        const successesInput = form.querySelector("[name=successes]");
+        if (attemptsInput) attemptsInput.value = "10";
+        if (successesInput) successesInput.value = "7";
+        render();
+      });
+    }
+
+    bindRecordForm("resultForm", "results");
+    bindRecordForm("summaryForm", "summaries");
+    bindRecordForm("planForm", "plans");
+    bindRecordForm("attemptForm", "attempts", data => {
+      const attempts = Math.max(1, Number(data.attempts || 1));
+      const successes = Math.min(attempts, Math.max(0, Number(data.successes || 0)));
+      return { ...data, attempts, successes };
+    });
+
+    document.addEventListener("click", event => {
+      const editButton = event.target.closest("[data-edit]");
+      if (editButton) {
+        event.preventDefault();
+        const [collection, id] = editButton.dataset.edit.split(":");
+        if (collection === "attempts") openAttemptEditDialog(id);
+        return;
+      }
+
+      const button = event.target.closest("[data-delete]");
+      if (!button) return;
+      event.preventDefault();
+      const [collection, id] = button.dataset.delete.split(":");
+      const athlete = currentAthlete();
+      if (!["results", "summaries", "plans", "attempts"].includes(collection)) return;
+      athlete[collection] = (athlete[collection] || []).filter(item => item.id !== id);
+      render();
+    });
+
+    let latestExportJson = "";
+
+    function downloadJson(json) {
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `运动员管理数据-${today()}.json`;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function openExportDialog(json) {
+      latestExportJson = json;
+      const dialog = document.getElementById("exportDialog");
+      const text = document.getElementById("exportText");
+      text.value = json;
+      dialog.classList.add("open");
+      text.focus();
+      text.select();
+    }
+
+    document.getElementById("exportData").addEventListener("click", () => {
+      const json = JSON.stringify(state, null, 2);
+      downloadJson(json);
+      openExportDialog(json);
+    });
+
+    document.getElementById("downloadExport").addEventListener("click", () => {
+      downloadJson(latestExportJson || JSON.stringify(state, null, 2));
+    });
+
+    document.getElementById("copyExport").addEventListener("click", async () => {
+      const text = document.getElementById("exportText");
+      text.focus();
+      text.select();
+      try {
+        await navigator.clipboard.writeText(text.value);
+        alert("已复制导出数据。");
+      } catch (error) {
+        document.execCommand("copy");
+        alert("已选中导出数据，可手动复制。");
+      }
+    });
+
+    document.getElementById("closeExport").addEventListener("click", () => {
+      document.getElementById("exportDialog").classList.remove("open");
+    });
+
+    document.getElementById("exportPdf").addEventListener("click", exportPdfReport);
+
+    document.getElementById("generatePdf").addEventListener("click", () => {
+      refreshPdfPreview();
+    });
+
+    document.getElementById("downloadPdf").addEventListener("click", async () => {
+      const report = refreshPdfPreview();
+      await savePdfBlob(report.blob, report.filename);
+    });
+
+    document.getElementById("closePdf").addEventListener("click", () => {
+      document.getElementById("pdfDialog").classList.remove("open");
+    });
+
+    document.getElementById("cancelEditAttempt").addEventListener("click", closeAttemptEditDialog);
+
+    document.getElementById("editAttemptForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const athlete = currentAthlete();
+      const index = (athlete.attempts || []).findIndex(item => item.id === editingAttemptId);
+      if (index < 0) return;
+      const data = getFormData(event.currentTarget);
+      const attempts = Math.max(1, Number(data.attempts || 1));
+      const successes = Math.min(attempts, Math.max(0, Number(data.successes || 0)));
+      athlete.attempts[index] = {
+        ...athlete.attempts[index],
+        ...data,
+        attempts,
+        successes
+      };
+      closeAttemptEditDialog();
+      render();
+    });
+
+    document.getElementById("importData").addEventListener("click", () => {
+      document.getElementById("importFile").click();
+    });
+
+    document.getElementById("importFile").addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const next = JSON.parse(reader.result);
+          if (!Array.isArray(next.athletes)) throw new Error("数据格式不正确");
+          state = next;
+          state.selectedId = state.selectedId || state.athletes[0]?.id;
+          render();
+        } catch (error) {
+          alert("导入失败，请选择本软件导出的 JSON 文件。");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    });
+
+    document.getElementById("statRangeMode").addEventListener("change", () => {
+      syncStatRangeInputs();
+      renderStats(currentAthlete());
+    });
+
+    document.getElementById("statFrom").addEventListener("change", () => renderStats(currentAthlete()));
+    document.getElementById("statTo").addEventListener("change", () => renderStats(currentAthlete()));
+
+    document.querySelectorAll("input[type=date]").forEach(input => {
+      if (!input.value) input.value = today();
+    });
+    syncStatRangeInputs();
+
+    render();
+  </script>
+</body>
+</html>
+index.html
