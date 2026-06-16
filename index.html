@@ -790,6 +790,70 @@
       justify-content: flex-end;
     }
 
+    .auth-badge {
+      min-height: 38px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #fff;
+      color: var(--track-dark);
+      border-color: var(--line);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .auth-dialog .export-box {
+      width: min(560px, 100%);
+    }
+
+    .auth-mode-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .auth-mode-tabs .tab {
+      min-height: 38px;
+      background: #edf1ed;
+      border-color: var(--line);
+    }
+
+    .auth-mode-tabs .tab.active {
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .auth-fields {
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    body[data-role="athlete"] .coach-only,
+    body[data-role="athlete"] .coach-only-inline {
+      display: none !important;
+    }
+
+    body[data-role="coach"] .athlete-only {
+      display: none !important;
+    }
+
+    body[data-role="athlete"] .auth-coach-only {
+      display: none !important;
+    }
+
+    body[data-role="athlete"] .tabs .tab:not([data-tab="stats"]) {
+      display: none;
+    }
+
     .mobile-menu { display: none; }
 
     svg {
@@ -937,6 +1001,10 @@
           <p id="currentSummary">选择或新增一名运动员开始管理</p>
         </div>
         <div class="header-actions">
+          <button class="auth-badge" id="authStatus" type="button" title="切换身份">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 0 0 10a5 5 0 0 0 0-10Z"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            身份
+          </button>
           <button class="secondary" id="exportData" title="导出数据">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             导出
@@ -982,6 +1050,9 @@
               </label>
               <label>项目
                 <input name="sport" placeholder="例如：体操 / 田径">
+              </label>
+              <label class="wide coach-only">运动员口令
+                <input name="accessCode" placeholder="运动员登录口令">
               </label>
               <label>身高 cm
                 <input name="height" type="number" min="0" step="0.1">
@@ -1213,6 +1284,39 @@
     </div>
   </div>
 
+  <div class="export-dialog auth-dialog" id="authDialog" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="export-box">
+      <h3 id="authTitle">选择身份</h3>
+      <p>教练可以管理全部数据；运动员只能查看和记录自己的内容。</p>
+      <div class="auth-mode-tabs">
+        <button class="tab active" id="coachModeTab" type="button">教练端</button>
+        <button class="tab" id="athleteModeTab" type="button">运动员端</button>
+      </div>
+      <div class="auth-fields">
+        <label>教练口令
+          <input id="coachCodeInput" type="password" placeholder="默认 123456">
+        </label>
+        <label class="auth-coach-only">新教练口令
+          <input id="coachNewCodeInput" type="password" placeholder="输入新的教练口令">
+        </label>
+        <label class="auth-coach-only">确认新口令
+          <input id="coachNewCodeConfirm" type="password" placeholder="再输一次新口令">
+        </label>
+        <label class="auth-athlete-only">选择运动员
+          <select id="athleteSelectInput"></select>
+        </label>
+        <label class="auth-athlete-only">运动员口令
+          <input id="athleteCodeInput" type="password" placeholder="输入教练给你的口令">
+        </label>
+      </div>
+      <div class="auth-actions">
+        <button class="secondary" id="closeAuth" type="button">关闭</button>
+        <button class="secondary auth-coach-only" id="saveCoachCode" type="button">修改口令</button>
+        <button class="primary" id="enterAuth" type="button">进入</button>
+      </div>
+    </div>
+  </div>
+
   <div class="export-dialog" id="syncDialog" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
     <div class="export-box">
       <h3 id="syncTitle">云同步</h3>
@@ -1422,11 +1526,17 @@
     const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
     const rankOptions = ["第一名", "第二名", "第三名", "第四名", "第五名", "第六名", "第七名", "第八名"];
     const syncConfigKey = "athlete-manager-sync-v1";
+    const sessionKey = "athlete-manager-session-v1";
     const defaultSyncConfig = {
       ownerRepo: "zhouyc1115-ops/athlete-manager",
       branch: "main",
       path: "data/athlete-manager-state.json",
       token: ""
+    };
+    const defaultCoachCode = "123456";
+    const roleLabels = {
+      coach: "教练端",
+      athlete: "运动员端"
     };
 
     const icons = {
@@ -1450,7 +1560,12 @@
       data.athletes = Array.isArray(data.athletes) ? data.athletes : [];
       data.selectedId = data.selectedId || data.athletes[0]?.id || "";
       data.updatedAt = data.updatedAt || "";
+      data.settings = {
+        coachCode: data.settings?.coachCode || defaultCoachCode,
+        ...data.settings
+      };
       (data.athletes || []).forEach(athlete => {
+        athlete.accessCode = athlete.accessCode || String(Math.floor(100000 + Math.random() * 900000));
         (athlete.attempts || []).forEach(item => {
           item.deduction = normalizeDeductionLabel(item.deduction);
         });
@@ -1912,6 +2027,91 @@
       queueCloudSave();
     }
 
+    function loadSession() {
+      try {
+        return { role: "", athleteId: "", ...(JSON.parse(localStorage.getItem(sessionKey) || "{}") || {}) };
+      } catch (error) {
+        return { role: "", athleteId: "" };
+      }
+    }
+
+    let session = loadSession();
+    const hasSavedSession = Boolean(localStorage.getItem(sessionKey));
+
+    function saveSession(nextSession) {
+      session = { role: "coach", athleteId: "", ...nextSession };
+      localStorage.setItem(sessionKey, JSON.stringify(session));
+      updateAuthStatus();
+      applyAccessControl();
+    }
+
+    function currentRole() {
+      return session.role === "athlete" ? "athlete" : "coach";
+    }
+
+    function currentAthleteId() {
+      return session.athleteId || state.selectedId || state.athletes[0]?.id || "";
+    }
+
+    function currentAthlete() {
+      if (currentRole() === "athlete") {
+        return state.athletes.find(a => a.id === currentAthleteId()) || state.athletes[0];
+      }
+      return state.athletes.find(a => a.id === state.selectedId) || state.athletes[0];
+    }
+
+    function updateAuthStatus() {
+      const button = document.getElementById("authStatus");
+      if (!button) return;
+      const athlete = currentRole() === "athlete" ? currentAthlete() : null;
+      button.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 0 0 10a5 5 0 0 0 0-10Z"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        ${escapeHtml(currentRole() === "coach" ? roleLabels.coach : athlete?.name ? `${athlete.name} / ${roleLabels.athlete}` : roleLabels.athlete)}
+      `;
+    }
+
+    function applyAccessControl() {
+      const role = currentRole();
+      document.body.dataset.role = role;
+      document.querySelectorAll(".coach-only").forEach(node => {
+        node.style.display = role === "coach" ? "" : "none";
+      });
+      document.querySelectorAll(".athlete-only").forEach(node => {
+        node.style.display = role === "athlete" ? "" : "none";
+      });
+      const coachOnlyIds = ["addAthlete", "exportData", "exportPdf", "importData", "deleteAthlete"];
+      coachOnlyIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.hidden = role !== "coach";
+      });
+      const forms = ["profileForm", "planForm", "summaryForm", "resultForm"];
+      forms.forEach(id => {
+        const form = document.getElementById(id);
+        if (!form) return;
+        form.querySelectorAll("input, select, textarea, button").forEach(el => {
+          el.disabled = role !== "coach";
+        });
+      });
+      const attemptForm = document.getElementById("attemptForm");
+      if (attemptForm) {
+        attemptForm.querySelectorAll("input, select, textarea, button").forEach(el => {
+          el.disabled = false;
+        });
+      }
+      document.querySelectorAll("[data-edit], [data-delete]").forEach(el => {
+        el.hidden = role !== "coach";
+      });
+      document.querySelectorAll(".tabs .tab").forEach(tab => {
+        if (role === "athlete" && tab.dataset.tab !== "stats") tab.hidden = true;
+        else tab.hidden = false;
+      });
+      const currentTab = document.querySelector(".tab.active");
+      if (role === "athlete" && currentTab?.dataset.tab !== "stats") {
+        document.querySelectorAll(".tab").forEach(button => button.classList.toggle("active", button.dataset.tab === "stats"));
+        document.querySelectorAll(".tab-view").forEach(view => view.classList.toggle("active", view.id === "stats"));
+      }
+    }
+
     function snapshotState(data) {
       const clone = structuredClone(data);
       delete clone.updatedAt;
@@ -2081,10 +2281,6 @@
       return state;
     }
 
-    function currentAthlete() {
-      return state.athletes.find(a => a.id === state.selectedId) || state.athletes[0];
-    }
-
     function setFormValues(form, data) {
       [...form.elements].forEach(el => {
         if (!el.name) return;
@@ -2123,8 +2319,15 @@
         state.selectedId = athlete.id;
       }
       const athlete = currentAthlete();
-      state.selectedId = athlete.id;
+      if (currentRole() === "athlete") {
+        state.selectedId = athlete?.id || state.selectedId;
+        session.athleteId = state.selectedId;
+      } else {
+        state.selectedId = athlete.id;
+      }
       save();
+      updateAuthStatus();
+      applyAccessControl();
       renderAthletes(athlete);
       renderProfile(athlete);
       renderRecords(athlete);
@@ -2132,6 +2335,20 @@
     }
 
     function renderAthletes(active) {
+      if (currentRole() === "athlete") {
+        const current = active || currentAthlete();
+        document.getElementById("athleteList").innerHTML = current ? `
+          <button class="athlete-item active" type="button" title="当前运动员">
+            <span class="avatar">${escapeHtml(initials(current.name))}</span>
+            <span>
+              <span class="athlete-name">${escapeHtml(current.name || "未命名")}</span>
+              <span class="athlete-meta">${escapeHtml(current.sport || "未填写项目")}</span>
+            </span>
+            <span aria-hidden="true">›</span>
+          </button>
+        ` : "";
+        return;
+      }
       document.getElementById("athleteList").innerHTML = state.athletes.map(a => `
         <button class="athlete-item ${a.id === active.id ? "active" : ""}" data-select="${a.id}" title="切换到 ${escapeHtml(a.name)}">
           <span class="avatar">${escapeHtml(initials(a.name))}</span>
@@ -2147,9 +2364,11 @@
     function renderProfile(athlete) {
       document.getElementById("currentName").textContent = athlete.name || "未命名运动员";
       const age = ageFromDate(athlete.birthDate);
+      const codeText = currentRole() === "coach" && athlete?.accessCode ? `口令 ${athlete.accessCode}` : "";
       document.getElementById("currentSummary").textContent = [
         athlete.sport,
-        age ? `${age} 岁` : ""
+        age ? `${age} 岁` : "",
+        codeText
       ].filter(Boolean).join(" · ") || "完善个人信息后，这里会显示核心摘要";
       setFormValues(document.getElementById("profileForm"), athlete);
     }
@@ -3090,6 +3309,7 @@
         gender: "女",
         birthDate: "",
         sport: "",
+        accessCode: String(Math.floor(100000 + Math.random() * 900000)),
         height: "",
         weight: "",
         contact: "",
@@ -3102,6 +3322,7 @@
     }
 
     document.getElementById("addAthlete").addEventListener("click", () => {
+      if (!isCoach()) return;
       const athlete = newAthlete();
       state.athletes.push(athlete);
       state.selectedId = athlete.id;
@@ -3109,6 +3330,7 @@
     });
 
     document.getElementById("athleteList").addEventListener("click", event => {
+      if (!isCoach()) return;
       const button = event.target.closest("[data-select]");
       if (!button) return;
       state.selectedId = button.dataset.select;
@@ -3117,11 +3339,13 @@
 
     document.getElementById("profileForm").addEventListener("submit", event => {
       event.preventDefault();
+      if (!isCoach()) return;
       Object.assign(currentAthlete(), getFormData(event.currentTarget));
       render();
     });
 
     document.getElementById("deleteAthlete").addEventListener("click", () => {
+      if (!isCoach()) return;
       const athlete = currentAthlete();
       if (state.athletes.length <= 1) {
         alert("至少保留一名运动员。");
@@ -3134,6 +3358,7 @@
     });
 
     document.querySelector(".tabs").addEventListener("click", event => {
+      if (!isCoach() && event.target.closest("[data-tab]")?.dataset.tab !== "stats") return;
       const tab = event.target.closest("[data-tab]");
       if (!tab) return;
       document.querySelectorAll(".tab").forEach(button => button.classList.toggle("active", button === tab));
@@ -3170,6 +3395,7 @@
     document.addEventListener("click", event => {
       const editButton = event.target.closest("[data-edit]");
       if (editButton) {
+        if (!isCoach()) return;
         event.preventDefault();
         const [collection, id] = editButton.dataset.edit.split(":");
         openEditRecordDialog(collection, id);
@@ -3178,6 +3404,7 @@
 
       const button = event.target.closest("[data-delete]");
       if (!button) return;
+      if (!isCoach()) return;
       event.preventDefault();
       const [collection, id] = button.dataset.delete.split(":");
       const athlete = currentAthlete();
@@ -3187,6 +3414,96 @@
     });
 
     let latestExportJson = "";
+
+    function openAuthDialog() {
+      const dialog = document.getElementById("authDialog");
+      document.getElementById("coachCodeInput").value = state.settings?.coachCode || defaultCoachCode;
+      document.getElementById("coachNewCodeInput").value = "";
+      document.getElementById("coachNewCodeConfirm").value = "";
+      document.getElementById("athleteCodeInput").value = "";
+      const select = document.getElementById("athleteSelectInput");
+      select.innerHTML = state.athletes.map(athlete => `
+        <option value="${escapeHtml(athlete.id)}">${escapeHtml(athlete.name || "未命名")} · ${escapeHtml(athlete.sport || "未填写项目")}</option>
+      `).join("");
+      select.value = session.athleteId || state.selectedId || state.athletes[0]?.id || "";
+      if (currentRole() === "athlete") {
+        document.getElementById("athleteModeTab").classList.add("active");
+        document.getElementById("coachModeTab").classList.remove("active");
+        document.querySelectorAll("#authDialog .auth-athlete-only").forEach(node => node.style.display = "");
+        document.querySelectorAll("#authDialog .auth-coach-only").forEach(node => node.style.display = "none");
+        document.getElementById("coachCodeInput").parentElement.style.display = "none";
+      } else {
+        document.getElementById("coachModeTab").classList.add("active");
+        document.getElementById("athleteModeTab").classList.remove("active");
+        document.querySelectorAll("#authDialog .auth-athlete-only").forEach(node => node.style.display = "none");
+        document.querySelectorAll("#authDialog .auth-coach-only").forEach(node => node.style.display = "");
+        document.getElementById("coachCodeInput").parentElement.style.display = "";
+      }
+      dialog.classList.add("open");
+    }
+
+    function closeAuthDialog() {
+      document.getElementById("authDialog").classList.remove("open");
+    }
+
+    function enterCoachMode() {
+      const entered = document.getElementById("coachCodeInput").value.trim();
+      const code = state.settings?.coachCode || defaultCoachCode;
+      if (entered !== code) {
+        alert("教练口令不正确。");
+        return;
+      }
+      saveSession({ role: "coach", athleteId: state.selectedId || state.athletes[0]?.id || "" });
+      closeAuthDialog();
+      render();
+    }
+
+    function updateCoachCode() {
+      const entered = document.getElementById("coachCodeInput").value.trim();
+      const code = state.settings?.coachCode || defaultCoachCode;
+      if (entered !== code) {
+        alert("先输入正确的当前教练口令。");
+        return;
+      }
+      const nextCode = document.getElementById("coachNewCodeInput").value.trim();
+      const confirmCode = document.getElementById("coachNewCodeConfirm").value.trim();
+      if (!nextCode) {
+        alert("请输入新的教练口令。");
+        return;
+      }
+      if (nextCode !== confirmCode) {
+        alert("两次输入的新口令不一致。");
+        return;
+      }
+      state.settings = { ...(state.settings || {}), coachCode: nextCode };
+      save();
+      document.getElementById("coachCodeInput").value = nextCode;
+      document.getElementById("coachNewCodeInput").value = "";
+      document.getElementById("coachNewCodeConfirm").value = "";
+      alert("教练口令已更新。");
+    }
+
+    function enterAthleteMode() {
+      const athleteId = document.getElementById("athleteSelectInput").value;
+      const athlete = state.athletes.find(a => a.id === athleteId);
+      if (!athlete) {
+        alert("请选择运动员。");
+        return;
+      }
+      const entered = document.getElementById("athleteCodeInput").value.trim();
+      if (entered !== String(athlete.accessCode || "")) {
+        alert("运动员口令不正确。");
+        return;
+      }
+      saveSession({ role: "athlete", athleteId });
+      state.selectedId = athleteId;
+      closeAuthDialog();
+      render();
+    }
+
+    function isCoach() {
+      return currentRole() === "coach";
+    }
 
     function openSyncDialog() {
       const dialog = document.getElementById("syncDialog");
@@ -3230,6 +3547,31 @@
       downloadJson(json);
       openExportDialog(json);
     });
+
+    document.getElementById("authStatus").addEventListener("click", openAuthDialog);
+
+    document.getElementById("coachModeTab").addEventListener("click", () => {
+      document.getElementById("coachModeTab").classList.add("active");
+      document.getElementById("athleteModeTab").classList.remove("active");
+      document.querySelectorAll("#authDialog .auth-athlete-only").forEach(node => node.style.display = "none");
+      document.getElementById("coachCodeInput").parentElement.style.display = "";
+    });
+
+    document.getElementById("athleteModeTab").addEventListener("click", () => {
+      document.getElementById("athleteModeTab").classList.add("active");
+      document.getElementById("coachModeTab").classList.remove("active");
+      document.querySelectorAll("#authDialog .auth-athlete-only").forEach(node => node.style.display = "");
+      document.getElementById("coachCodeInput").parentElement.style.display = "none";
+    });
+
+    document.getElementById("closeAuth").addEventListener("click", closeAuthDialog);
+
+    document.getElementById("enterAuth").addEventListener("click", () => {
+      if (document.getElementById("athleteModeTab").classList.contains("active")) enterAthleteMode();
+      else enterCoachMode();
+    });
+
+    document.getElementById("saveCoachCode").addEventListener("click", updateCoachCode);
 
     document.getElementById("syncStatus").addEventListener("click", openSyncDialog);
 
@@ -3367,6 +3709,7 @@
         await hydrateFromCloud();
       }
       render();
+      if (!hasSavedSession) openAuthDialog();
     }
 
     initializeApp();
