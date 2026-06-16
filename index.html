@@ -611,6 +611,8 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 16px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .export-box h3 {
@@ -638,10 +640,93 @@
       align-items: end;
     }
 
+    .title-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .record-pick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .record-pick {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfb;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .record-pick h4 {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .record-pick-list {
+      display: grid;
+      gap: 6px;
+      max-height: 150px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .record-pick-list label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .record-pick-list input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      min-height: 16px;
+      padding: 0;
+      margin: 2px 0 0;
+      flex: 0 0 auto;
+    }
+
     .range-grid .secondary,
     .range-grid .primary {
       height: 39px;
       min-height: 39px;
+    }
+
+    .pdf-section-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfb;
+    }
+
+    .pdf-section-grid label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 650;
+      margin: 0;
+    }
+
+    .pdf-section-grid input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      min-height: 16px;
+      padding: 0;
+      margin: 0;
+      flex: 0 0 auto;
     }
 
     .export-actions {
@@ -731,6 +816,22 @@
         min-height: 42px;
       }
       .tab-view { padding-bottom: 4px; }
+      .range-grid {
+        grid-template-columns: 1fr;
+      }
+      .pdf-section-grid {
+        grid-template-columns: 1fr;
+      }
+      .record-pick-grid {
+        grid-template-columns: 1fr;
+      }
+      .pdf-frame {
+        height: min(42vh, 320px);
+      }
+      .export-box {
+        width: min(100%, 520px);
+        max-height: 92vh;
+      }
       .header-actions {
         width: 100%;
       }
@@ -864,82 +965,25 @@
           </div>
           <div class="panel-body">
             <nav class="tabs" aria-label="功能切换">
-              <button class="tab active" data-tab="results">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M5 5H3v3a4 4 0 0 0 4 4"/><path d="M19 5h2v3a4 4 0 0 1-4 4"/></svg>
-                比赛成绩
-              </button>
-              <button class="tab" data-tab="summaries">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6M8 11h8M8 15h5"/></svg>
-                总结报告
+              <button class="tab active" data-tab="stats">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg>
+                项目成功率
               </button>
               <button class="tab" data-tab="plans">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m8 15 2 2 5-5"/></svg>
                 训练计划
               </button>
-              <button class="tab" data-tab="stats">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-7"/></svg>
-                项目成功率
+              <button class="tab" data-tab="summaries">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5Z"/><path d="M8 7h6M8 11h8M8 15h5"/></svg>
+                总结报告
+              </button>
+              <button class="tab" data-tab="results">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M5 5H3v3a4 4 0 0 0 4 4"/><path d="M19 5h2v3a4 4 0 0 1-4 4"/></svg>
+                比赛成绩
               </button>
             </nav>
 
-            <div class="tab-view active" id="results">
-              <div class="split">
-                <form class="form-card form-stack" id="resultForm">
-                  <h4>新增比赛成绩</h4>
-                  <label>比赛名称<input name="event" required placeholder="例如：全国锦标赛"></label>
-                  <label>日期<input name="date" type="date" required></label>
-                  <label>项目<input name="discipline" placeholder="例如：太极拳"></label>
-                  <label>成绩<input name="score" placeholder="例如：14.450 / 第 1 名"></label>
-                  <label>名次<input name="rank" placeholder="例如：1"></label>
-                  <label>备注<textarea name="notes" placeholder="发挥情况、对手、裁判反馈"></textarea></label>
-                  <button class="primary" type="submit">添加成绩</button>
-                </form>
-                <div class="record-list" id="resultList"></div>
-              </div>
-            </div>
-
-            <div class="tab-view" id="summaries">
-              <div class="split">
-                <form class="form-card form-stack" id="summaryForm">
-                  <h4>新增总结报告</h4>
-                  <label>日期<input name="date" type="date" required></label>
-                  <label>总结名称<input name="focus" required placeholder="例如：成套稳定性"></label>
-                  <label>疲劳程度
-                    <select name="fatigue">
-                      <option>低</option>
-                      <option>中</option>
-                      <option>高</option>
-                    </select>
-                  </label>
-                  <label>总结<textarea name="content" placeholder="完成情况、问题、改进点"></textarea></label>
-                  <button class="primary" type="submit">添加报告</button>
-                </form>
-                <div class="record-list" id="summaryList"></div>
-              </div>
-            </div>
-
-            <div class="tab-view" id="plans">
-              <div class="split">
-                <form class="form-card form-stack" id="planForm">
-                  <h4>新增训练计划</h4>
-                  <label>开始日期<input name="startDate" type="date" required></label>
-                  <label>结束日期<input name="endDate" type="date"></label>
-                  <label>目标<input name="goal" required placeholder="例如：提升太极剑动作成功率"></label>
-                  <label>重点安排<textarea name="tasks" placeholder="每天训练安排、组数、恢复要求"></textarea></label>
-                  <label>状态
-                    <select name="status">
-                      <option>未开始</option>
-                      <option>进行中</option>
-                      <option>已完成</option>
-                    </select>
-                  </label>
-                  <button class="primary" type="submit">添加计划</button>
-                </form>
-                <div class="record-list" id="planList"></div>
-              </div>
-            </div>
-
-            <div class="tab-view" id="stats">
+            <div class="tab-view active" id="stats">
               <div class="split">
                 <form class="form-card form-stack" id="attemptForm">
                   <h4>记录项目动作</h4>
@@ -1044,6 +1088,68 @@
                 </div>
               </div>
             </div>
+
+            <div class="tab-view" id="plans">
+              <div class="split">
+                <form class="form-card form-stack" id="planForm">
+                  <h4>新增训练计划</h4>
+                  <label>开始日期<input name="startDate" type="date" required></label>
+                  <label>结束日期<input name="endDate" type="date"></label>
+                  <label>目标<input name="goal" required placeholder="例如：提升太极剑动作成功率"></label>
+                  <label>重点安排<textarea name="tasks" placeholder="每天训练安排、组数、恢复要求"></textarea></label>
+                  <button class="primary" type="submit">添加计划</button>
+                </form>
+                <div class="record-list" id="planList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="summaries">
+              <div class="split">
+                <form class="form-card form-stack" id="summaryForm">
+                  <h4>新增总结报告</h4>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>总结名称<input name="focus" required placeholder="例如：成套稳定性"></label>
+                  <label>疲劳程度
+                    <select name="fatigue">
+                      <option>低</option>
+                      <option>中</option>
+                      <option>高</option>
+                    </select>
+                  </label>
+                  <label>总结<textarea name="content" placeholder="完成情况、问题、改进点"></textarea></label>
+                  <button class="primary" type="submit">添加报告</button>
+                </form>
+                <div class="record-list" id="summaryList"></div>
+              </div>
+            </div>
+
+            <div class="tab-view" id="results">
+              <div class="split">
+                <form class="form-card form-stack" id="resultForm">
+                  <h4>新增比赛成绩</h4>
+                  <label>比赛名称<input name="event" required placeholder="例如：全国锦标赛"></label>
+                  <label>日期<input name="date" type="date" required></label>
+                  <label>项目<input name="discipline" placeholder="例如：太极拳"></label>
+                  <label>成绩<input name="score" placeholder="例如：14.450 / 第 1 名"></label>
+                  <label>名次
+                    <select name="rank">
+                      <option value="">未填</option>
+                      <option>第一名</option>
+                      <option>第二名</option>
+                      <option>第三名</option>
+                      <option>第四名</option>
+                      <option>第五名</option>
+                      <option>第六名</option>
+                      <option>第七名</option>
+                      <option>第八名</option>
+                    </select>
+                  </label>
+                  <label>备注<textarea name="notes" placeholder="发挥情况、对手、裁判反馈"></textarea></label>
+                  <button class="primary" type="submit">添加成绩</button>
+                </form>
+                <div class="record-list" id="resultList"></div>
+              </div>
+            </div>
           </div>
         </section>
       </section>
@@ -1066,11 +1172,43 @@
   <div class="export-dialog" id="pdfDialog" role="dialog" aria-modal="true" aria-labelledby="pdfTitle">
     <div class="export-box">
       <h3 id="pdfTitle">PDF报告预览</h3>
-      <p>先选时间范围，再点“生成预览”。如果没有自动保存，可用“打开PDF”或“保存PDF”。</p>
+      <p>先选时间范围，再勾选要导出的内容，点“生成预览”。如果没有自动保存，可用“打开PDF”或“保存PDF”。</p>
+      <label class="title-grid">导出标题
+        <input id="pdfCustomTitle" type="text" placeholder="例如：芝宁太极训练成功率报告">
+      </label>
+      <div class="title-grid">
+        <label>导出日期<input id="pdfExportDate" type="date"></label>
+        <label>统计范围<input id="pdfRangeText" type="text" placeholder="例如：2026-06-01 至 2026-06-30"></label>
+        <label>项目<input id="pdfProjectName" type="text" placeholder="例如：太极拳"></label>
+      </div>
+      <div class="record-pick-grid">
+        <div class="record-pick">
+          <h4>比赛成绩</h4>
+          <div class="record-pick-list" id="pdfResultList"></div>
+        </div>
+        <div class="record-pick">
+          <h4>总结报告</h4>
+          <div class="record-pick-list" id="pdfSummaryList"></div>
+        </div>
+        <div class="record-pick">
+          <h4>训练计划</h4>
+          <div class="record-pick-list" id="pdfPlanList"></div>
+        </div>
+      </div>
       <div class="range-grid">
         <label>开始日期<input id="pdfFrom" type="date"></label>
         <label>结束日期<input id="pdfTo" type="date"></label>
         <button class="primary" id="generatePdf" type="button">生成预览</button>
+      </div>
+      <div class="pdf-section-grid" aria-label="导出内容选择">
+        <label><input type="checkbox" name="pdfSection" value="summary" checked> 统计概览</label>
+        <label><input type="checkbox" name="pdfSection" value="attempts" checked> 项目成功率</label>
+        <label><input type="checkbox" name="pdfSection" value="deductionPoints" checked> 扣分点</label>
+        <label><input type="checkbox" name="pdfSection" value="deductionActions" checked> 扣分动作</label>
+        <label><input type="checkbox" name="pdfSection" value="results" checked> 比赛成绩</label>
+        <label><input type="checkbox" name="pdfSection" value="summaries" checked> 总结报告</label>
+        <label><input type="checkbox" name="pdfSection" value="plans" checked> 训练计划</label>
+        <label><input type="checkbox" name="pdfSection" value="history" checked> 历史记录</label>
       </div>
       <iframe class="pdf-frame" id="pdfFrame" title="PDF报告预览"></iframe>
       <div class="export-actions">
@@ -1081,82 +1219,122 @@
     </div>
   </div>
 
-  <div class="export-dialog" id="editAttemptDialog" role="dialog" aria-modal="true" aria-labelledby="editAttemptTitle">
+  <div class="export-dialog" id="editRecordDialog" role="dialog" aria-modal="true" aria-labelledby="editRecordTitle">
     <div class="export-box">
-      <h3 id="editAttemptTitle">更改历史记录</h3>
+      <h3 id="editRecordTitle">更改历史记录</h3>
       <p>修改后会立即更新这条历史记录和相关统计。</p>
-      <form class="form-stack" id="editAttemptForm">
-        <label>日期<input name="date" type="date" required></label>
-        <label>整套 / 动作
-          <select name="skill" required>
-            <option>整套完成</option>
-            <option>整套无（雀地龙）</option>
-            <option>整套无难度</option>
-          </select>
-        </label>
-        <label>项目
-          <select name="difficulty">
-            <option>太极拳</option>
-            <option>太极剑</option>
-            <option>太极扇</option>
-          </select>
-        </label>
-        <label>扣分点
-          <select name="deduction">
-            <option>无</option>
-            <option>71（附加支撑）</option>
-            <option>70A（晃动）</option>
-            <option>70B（移动/跳动）</option>
-            <option>30（未过肩）</option>
-            <option>31（正踢腿弯曲或小于135度）</option>
-            <option>22（雀地龙夹角小于45度）</option>
-          </select>
-        </label>
-        <label>扣分动作
-          <select name="deductionAction">
-            <option>无</option>
-            <option>腾空正踢腿</option>
-            <option>飞脚+提膝独立</option>
-            <option>腾空外摆540</option>
-            <option>腾空外摆450</option>
-            <option>腾空外摆360</option>
-            <option>后叉腿+蹬腿</option>
-            <option>旋风脚180</option>
-          </select>
-        </label>
-        <label>整套次数
-          <select name="attempts" required>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-            <option>6</option>
-            <option>7</option>
-            <option>8</option>
-            <option>9</option>
-            <option>10</option>
-          </select>
-        </label>
-        <label>成功次数
-          <select name="successes" required>
-            <option>0</option>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
-            <option>6</option>
-            <option>7</option>
-            <option>8</option>
-            <option>9</option>
-            <option>10</option>
-          </select>
-        </label>
-        <label>备注<textarea name="notes" placeholder="失败原因、保护方式、下次调整"></textarea></label>
+      <form class="form-stack" id="editRecordForm">
+        <div data-kind="results">
+          <label>日期<input name="date" type="date" required></label>
+          <label>比赛名称<input name="event" required placeholder="例如：全国锦标赛"></label>
+          <label>项目<input name="discipline" placeholder="例如：太极拳"></label>
+          <label>成绩<input name="score" placeholder="例如：14.450 / 第 1 名"></label>
+          <label>名次
+            <select name="rank">
+              <option value="">未填</option>
+              <option>第一名</option>
+              <option>第二名</option>
+              <option>第三名</option>
+              <option>第四名</option>
+              <option>第五名</option>
+              <option>第六名</option>
+              <option>第七名</option>
+              <option>第八名</option>
+            </select>
+          </label>
+          <label>备注<textarea name="notes" placeholder="发挥情况、对手、裁判反馈"></textarea></label>
+        </div>
+        <div data-kind="summaries">
+          <label>日期<input name="date" type="date" required></label>
+          <label>总结名称<input name="focus" required placeholder="例如：成套稳定性"></label>
+          <label>疲劳程度
+            <select name="fatigue">
+              <option>低</option>
+              <option>中</option>
+              <option>高</option>
+            </select>
+          </label>
+          <label>总结<textarea name="content" placeholder="完成情况、问题、改进点"></textarea></label>
+        </div>
+        <div data-kind="plans">
+          <label>开始日期<input name="startDate" type="date" required></label>
+          <label>结束日期<input name="endDate" type="date"></label>
+          <label>目标<input name="goal" required placeholder="例如：提升太极剑动作成功率"></label>
+          <label>重点安排<textarea name="tasks" placeholder="每天训练安排、组数、恢复要求"></textarea></label>
+        </div>
+        <div data-kind="attempts">
+          <label>日期<input name="date" type="date" required></label>
+          <label>整套 / 动作
+            <select name="skill" required>
+              <option>整套完成</option>
+              <option>整套无（雀地龙）</option>
+              <option>整套无难度</option>
+            </select>
+          </label>
+          <label>项目
+            <select name="difficulty">
+              <option>太极拳</option>
+              <option>太极剑</option>
+              <option>太极扇</option>
+            </select>
+          </label>
+          <label>扣分点
+            <select name="deduction">
+              <option>无</option>
+              <option>71（附加支撑）</option>
+              <option>70A（晃动）</option>
+              <option>70B（移动/跳动）</option>
+              <option>30（未过肩）</option>
+              <option>31（正踢腿弯曲或小于135度）</option>
+              <option>22（雀地龙夹角小于45度）</option>
+            </select>
+          </label>
+          <label>扣分动作
+            <select name="deductionAction">
+              <option>无</option>
+              <option>腾空正踢腿</option>
+              <option>飞脚+提膝独立</option>
+              <option>腾空外摆540</option>
+              <option>腾空外摆450</option>
+              <option>腾空外摆360</option>
+              <option>后叉腿+蹬腿</option>
+              <option>旋风脚180</option>
+            </select>
+          </label>
+          <label>整套次数
+            <select name="attempts" required>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+              <option>7</option>
+              <option>8</option>
+              <option>9</option>
+              <option>10</option>
+            </select>
+          </label>
+          <label>成功次数
+            <select name="successes" required>
+              <option>0</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+              <option>7</option>
+              <option>8</option>
+              <option>9</option>
+              <option>10</option>
+            </select>
+          </label>
+          <label>备注<textarea name="notes" placeholder="失败原因、保护方式、下次调整"></textarea></label>
+        </div>
         <div class="export-actions">
-          <button class="secondary" id="cancelEditAttempt" type="button">取消</button>
-          <button class="primary" type="submit">保存更改</button>
+          <button class="secondary" id="cancelEditRecord" type="button">取消</button>
+          <button class="primary" id="saveEditRecord" type="button">保存更改</button>
         </div>
       </form>
     </div>
@@ -1172,6 +1350,7 @@
     };
     const today = () => toLocalIso(new Date());
     const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    const rankOptions = ["第一名", "第二名", "第三名", "第四名", "第五名", "第六名", "第七名", "第八名"];
 
     const icons = {
       trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>'
@@ -1729,7 +1908,10 @@
               <p class="record-title">${escapeHtml(item.event)}</p>
               <p class="record-detail">${escapeHtml(item.date)} · ${escapeHtml(item.discipline || "未填项目")}</p>
             </div>
-            <button class="delete-btn" type="button" data-delete="results:${item.id}" title="删除成绩">${icons.trash}删除</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="edit-btn" type="button" data-edit="results:${item.id}" title="更改成绩">更改</button>
+              <button class="delete-btn" type="button" data-delete="results:${item.id}" title="删除成绩">${icons.trash}删除</button>
+            </div>
           </div>
           <div class="tag-row">
             <span class="tag">成绩 ${escapeHtml(item.score || "-")}</span>
@@ -1746,7 +1928,10 @@
               <p class="record-title">${escapeHtml(item.focus)}</p>
               <p class="record-detail">${escapeHtml(item.date)}</p>
             </div>
-            <button class="delete-btn" type="button" data-delete="summaries:${item.id}" title="删除报告">${icons.trash}删除</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="edit-btn" type="button" data-edit="summaries:${item.id}" title="更改报告">更改</button>
+              <button class="delete-btn" type="button" data-delete="summaries:${item.id}" title="删除报告">${icons.trash}删除</button>
+            </div>
           </div>
           <div class="tag-row"><span class="tag blue">疲劳 ${escapeHtml(item.fatigue)}</span></div>
           ${item.content ? `<p class="record-detail">${escapeHtml(item.content)}</p>` : ""}
@@ -1760,9 +1945,11 @@
               <p class="record-title">${escapeHtml(item.goal)}</p>
               <p class="record-detail">${escapeHtml(item.startDate)}${item.endDate ? ` 至 ${escapeHtml(item.endDate)}` : ""}</p>
             </div>
-            <button class="delete-btn" type="button" data-delete="plans:${item.id}" title="删除计划">${icons.trash}删除</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="edit-btn" type="button" data-edit="plans:${item.id}" title="更改计划">更改</button>
+              <button class="delete-btn" type="button" data-delete="plans:${item.id}" title="删除计划">${icons.trash}删除</button>
+            </div>
           </div>
-          <div class="tag-row"><span class="tag">${escapeHtml(item.status)}</span></div>
           ${item.tasks ? `<p class="record-detail">${escapeHtml(item.tasks)}</p>` : ""}
         </article>
       `);
@@ -1966,9 +2153,114 @@
       `)).join("");
     }
 
-    function buildPdfReportHtml(autoPrint = false) {
+    function filterRecordsByRange(items, getDates, range = getPdfRange()) {
+      return (items || []).filter(item => {
+        const dates = getDates(item).filter(Boolean);
+        if (!dates.length) return true;
+        return dates.some(date => date >= range.from && date <= range.to);
+      });
+    }
+
+    const pdfSectionDefaults = ["summary", "attempts", "deductionPoints", "deductionActions", "results", "summaries", "plans", "history"];
+
+    function getPdfCustomTitle() {
+      const input = document.getElementById("pdfCustomTitle");
       const athlete = currentAthlete();
-      const attempts = athlete.attempts || [];
+      const fallback = `${athlete.name || "运动员"}训练成功率报告`;
+      return (input?.value || fallback).trim() || fallback;
+    }
+
+    function getPdfExportDate() {
+      const input = document.getElementById("pdfExportDate");
+      return input?.value || today();
+    }
+
+    function getPdfRangeText(range = getPdfRange()) {
+      const input = document.getElementById("pdfRangeText");
+      return (input?.value || `${range.from} 至 ${range.to}`).trim() || `${range.from} 至 ${range.to}`;
+    }
+
+    function getPdfProjectName() {
+      const input = document.getElementById("pdfProjectName");
+      const athlete = currentAthlete();
+      return (input?.value || athlete.sport || "-").trim() || "-";
+    }
+
+    function getPdfSelectedRecordIds(listId) {
+      const list = document.getElementById(listId);
+      if (!list) return [];
+      return [...list.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value).filter(Boolean);
+    }
+
+    function recordExportLabel(kind, item) {
+      if (kind === "results") {
+        return `${item.date || "未填日期"} · ${item.event || "比赛成绩"}${item.discipline ? ` · ${item.discipline}` : ""}`;
+      }
+      if (kind === "summaries") {
+        return `${item.date || "未填日期"} · ${item.focus || "总结报告"}`;
+      }
+      if (kind === "plans") {
+        return `${item.startDate || "未填日期"}${item.endDate ? ` 至 ${item.endDate}` : ""} · ${item.goal || "训练计划"}`;
+      }
+      return item.id || "记录";
+    }
+
+    function populatePdfSelect(listId, items, kind, title) {
+      const list = document.getElementById(listId);
+      if (!list) return;
+      const current = new Set(getPdfSelectedRecordIds(listId));
+      const sorted = [...(items || [])].sort((a, b) => {
+        const aKey = kind === "plans" ? (a.startDate || a.date || "") : (a.date || "");
+        const bKey = kind === "plans" ? (b.startDate || b.date || "") : (b.date || "");
+        return bKey.localeCompare(aKey);
+      });
+      list.innerHTML = sorted.length
+        ? sorted.map(item => `
+          <label>
+            <input type="checkbox" name="pdfRecord" data-kind="${escapeHtml(kind)}" value="${escapeHtml(item.id)}"${current.has(item.id) ? " checked" : ""}>
+            <span>${escapeHtml(recordExportLabel(kind, item))}</span>
+          </label>
+        `).join("")
+        : `<div class="empty">暂无${escapeHtml(title || "记录")}</div>`;
+    }
+
+    function renderPdfSelectors() {
+      const athlete = currentAthlete();
+      populatePdfSelect("pdfResultList", athlete.results || [], "results", "比赛成绩");
+      populatePdfSelect("pdfSummaryList", athlete.summaries || [], "summaries", "总结报告");
+      populatePdfSelect("pdfPlanList", athlete.plans || [], "plans", "训练计划");
+    }
+
+    function selectPdfRecords(items, listId) {
+      const selectedIds = getPdfSelectedRecordIds(listId);
+      if (!selectedIds.length) return items || [];
+      const selectedSet = new Set(selectedIds);
+      return (items || []).filter(item => selectedSet.has(item.id));
+    }
+
+    function sanitizePdfFilename(value) {
+      return String(value || "PDF报告")
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim() || "PDF报告";
+    }
+
+    function getPdfSectionSelection() {
+      const checked = [...document.querySelectorAll('input[name="pdfSection"]:checked')].map(input => input.value);
+      return new Set(checked.length ? checked : pdfSectionDefaults);
+    }
+
+    function buildPdfReportHtml(autoPrint = false, sections = getPdfSectionSelection()) {
+      const athlete = currentAthlete();
+      const titleText = getPdfCustomTitle();
+      const exportDate = getPdfExportDate();
+      const rangeText = getPdfRangeText();
+      const projectName = getPdfProjectName();
+      const range = getPdfRange();
+      const attempts = filterAttemptsByRange(athlete.attempts || [], range);
+      const results = selectPdfRecords(filterRecordsByRange(athlete.results || [], item => [item.date], range), "pdfResultList");
+      const summaries = selectPdfRecords(filterRecordsByRange(athlete.summaries || [], item => [item.date], range), "pdfSummaryList");
+      const plans = selectPdfRecords(filterRecordsByRange(athlete.plans || [], item => [item.startDate, item.endDate], range), "pdfPlanList");
       const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
       const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
       const totalRate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
@@ -1990,7 +2282,7 @@
         <html lang="zh-CN">
         <head>
           <meta charset="utf-8">
-          <title>${escapeHtml(athlete.name || "运动员")}训练成功率报告</title>
+          <title>${escapeHtml(titleText)}</title>
           <style>
             body { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; color: #1f2a2c; margin: 28px; }
             h1 { margin: 0 0 6px; font-size: 24px; }
@@ -2006,26 +2298,76 @@
           </style>
         </head>
         <body>
-          <h1>${escapeHtml(athlete.name || "运动员")}训练成功率报告</h1>
-          <p>导出日期：${today()}</p>
-          <p>项目：${escapeHtml(athlete.sport || "-")}</p>
-          <div class="summary">
+          <h1>${escapeHtml(titleText)}</h1>
+          <p>导出日期：${escapeHtml(exportDate)}</p>
+          <p>统计范围：${escapeHtml(rangeText)}</p>
+          <p>项目：${escapeHtml(projectName)}</p>
+          ${sections.has("summary") ? `<div class="summary">
             <div class="box"><div class="value">${totalAttempts}</div><p>总整套次数</p></div>
             <div class="box"><div class="value">${totalSuccess}</div><p>总成功</p></div>
             <div class="box"><div class="value">${totalRate}%</div><p>总成功率</p></div>
             <div class="box"><div class="value">${records.length}</div><p>记录数</p></div>
-          </div>
-          <h2>按项目成功率</h2>
-          <table><thead><tr><th>项目</th><th>整套次数</th><th>成功</th><th>成功率</th></tr></thead><tbody>${pdfTableRows(groupAttempts(attempts, "difficulty"))}</tbody></table>
-          <h2>按项目扣分点次数</h2>
-          <table><thead><tr><th>项目</th><th>扣分点</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "point"))}</tbody></table>
-          <h2>按项目扣分动作次数</h2>
-          <table><thead><tr><th>项目</th><th>扣分动作</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "action"))}</tbody></table>
-          <h2>历史记录</h2>
+          </div>` : ""}
+          ${sections.has("attempts") ? `<h2>按项目成功率</h2>
+          <table><thead><tr><th>项目</th><th>整套次数</th><th>成功</th><th>成功率</th></tr></thead><tbody>${pdfTableRows(groupAttempts(attempts, "difficulty"))}</tbody></table>` : ""}
+          ${sections.has("deductionPoints") ? `<h2>按项目扣分点次数</h2>
+          <table><thead><tr><th>项目</th><th>扣分点</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "point"))}</tbody></table>` : ""}
+          ${sections.has("deductionActions") ? `<h2>按项目扣分动作次数</h2>
+          <table><thead><tr><th>项目</th><th>扣分动作</th><th>次数</th></tr></thead><tbody>${pdfProjectCountRows(groupDeductionsByProject(attempts, "action"))}</tbody></table>` : ""}
+          ${sections.has("results") ? `<h2>比赛成绩</h2>
+          <table>
+            <thead><tr><th>日期</th><th>项目</th><th>成绩</th><th>名次</th><th>备注</th></tr></thead>
+            <tbody>${
+              results.length
+                ? results.map(item => `
+                  <tr>
+                    <td>${escapeHtml(item.date || "")}</td>
+                    <td>${escapeHtml(item.event || "")}${item.discipline ? ` · ${escapeHtml(item.discipline)}` : ""}</td>
+                    <td>${escapeHtml(item.score || "-")}</td>
+                    <td>${escapeHtml(item.rank || "-")}</td>
+                    <td>${escapeHtml(item.notes || "")}</td>
+                  </tr>
+                `).join("")
+                : `<tr><td colspan="5">暂无记录</td></tr>`
+            }</tbody>
+          </table>` : ""}
+          ${sections.has("summaries") ? `<h2>总结报告</h2>
+          <table>
+            <thead><tr><th>日期</th><th>总结名称</th><th>疲劳</th><th>内容</th></tr></thead>
+            <tbody>${
+              summaries.length
+                ? summaries.map(item => `
+                  <tr>
+                    <td>${escapeHtml(item.date || "")}</td>
+                    <td>${escapeHtml(item.focus || "")}</td>
+                    <td>${escapeHtml(item.fatigue || "-")}</td>
+                    <td>${escapeHtml(item.content || "")}</td>
+                  </tr>
+                `).join("")
+                : `<tr><td colspan="4">暂无记录</td></tr>`
+            }</tbody>
+          </table>` : ""}
+          ${sections.has("plans") ? `<h2>训练计划</h2>
+          <table>
+            <thead><tr><th>开始日期</th><th>结束日期</th><th>计划名称</th><th>内容</th></tr></thead>
+            <tbody>${
+              plans.length
+                ? plans.map(item => `
+                  <tr>
+                    <td>${escapeHtml(item.startDate || "")}</td>
+                    <td>${escapeHtml(item.endDate || "")}</td>
+                    <td>${escapeHtml(item.goal || "")}</td>
+                    <td>${escapeHtml(item.tasks || "")}</td>
+                  </tr>
+                `).join("")
+                : `<tr><td colspan="4">暂无记录</td></tr>`
+            }</tbody>
+          </table>` : ""}
+          ${sections.has("history") ? `<h2>历史记录</h2>
           <table>
             <thead><tr><th>日期</th><th>项目</th><th>整套/动作</th><th>整套次数</th><th>成功</th><th>成功率</th><th>扣分点</th><th>扣分动作</th><th>备注</th></tr></thead>
             <tbody>${rows || `<tr><td colspan="9">暂无记录</td></tr>`}</tbody>
-          </table>
+          </table>` : ""}
           ${autoPrint ? `<script>window.addEventListener("load", () => setTimeout(() => window.print(), 300));<\/script>` : ""}
         </body>
         </html>`;
@@ -2169,9 +2511,16 @@
       return new Blob([bytes], { type: "application/pdf" });
     }
 
-    function buildPdfCanvases(range = getPdfRange()) {
+    function buildPdfCanvases(range = getPdfRange(), sections = getPdfSectionSelection()) {
       const athlete = currentAthlete();
+      const titleText = getPdfCustomTitle();
+      const exportDate = getPdfExportDate();
+      const rangeText = getPdfRangeText(range);
+      const projectName = getPdfProjectName();
       const attempts = filterAttemptsByRange(athlete.attempts || [], range);
+      const results = selectPdfRecords(filterRecordsByRange(athlete.results || [], item => [item.date], range), "pdfResultList");
+      const summaries = selectPdfRecords(filterRecordsByRange(athlete.summaries || [], item => [item.date], range), "pdfSummaryList");
+      const plans = selectPdfRecords(filterRecordsByRange(athlete.plans || [], item => [item.startDate, item.endDate], range), "pdfPlanList");
       const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
       const totalSuccess = attempts.reduce((sum, item) => sum + Number(item.successes || 0), 0);
       const totalRate = totalAttempts ? Math.round(totalSuccess / totalAttempts * 100) : 0;
@@ -2238,39 +2587,41 @@
 
         row(headers, true);
         if (rows.length) rows.forEach(item => row(item));
-        else row(["暂无数据", "", "", ""].slice(0, headers.length));
+        else row(Array.from({ length: headers.length }, (_, index) => (index === 0 ? "暂无数据" : "")));
         y += 28;
       }
 
       newPage();
-      drawText(`${athlete.name || "运动员"}训练成功率报告`, margin, "bold 42px Arial, sans-serif");
+      drawText(titleText, margin, "bold 42px Arial, sans-serif");
       y += 58;
-      drawText(`导出日期：${today()}`, margin, "24px Arial, sans-serif", "#657274");
+      drawText(`导出日期：${exportDate}`, margin, "24px Arial, sans-serif", "#657274");
       y += 36;
-      drawText(`统计范围：${range.from} 至 ${range.to}`, margin, "24px Arial, sans-serif", "#657274");
+      drawText(`统计范围：${rangeText}`, margin, "24px Arial, sans-serif", "#657274");
       y += 36;
-      drawText(`项目：${athlete.sport || "-"}`, margin, "24px Arial, sans-serif", "#657274");
+      drawText(`项目：${projectName}`, margin, "24px Arial, sans-serif", "#657274");
       y += 54;
 
-      const boxes = [
-        ["总整套次数", totalAttempts],
-        ["总成功", totalSuccess],
-        ["总成功率", `${totalRate}%`],
-        ["记录数", records.length]
-      ];
-      const boxW = 250;
-      boxes.forEach((box, index) => {
-        const x = margin + index * (boxW + 24);
-        ctx.strokeStyle = "#cfd7d1";
-        ctx.strokeRect(x, y, boxW, 100);
-        ctx.font = "bold 34px Arial, sans-serif";
-        ctx.fillStyle = "#1f2a2c";
-        ctx.fillText(String(box[1]), x + 16, y + 14);
-        ctx.font = "20px Arial, sans-serif";
-        ctx.fillStyle = "#657274";
-        ctx.fillText(box[0], x + 16, y + 62);
-      });
-      y += 140;
+      if (sections.has("summary")) {
+        const boxes = [
+          ["总整套次数", totalAttempts],
+          ["总成功", totalSuccess],
+          ["总成功率", `${totalRate}%`],
+          ["记录数", records.length]
+        ];
+        const boxW = 250;
+        boxes.forEach((box, index) => {
+          const x = margin + index * (boxW + 24);
+          ctx.strokeStyle = "#cfd7d1";
+          ctx.strokeRect(x, y, boxW, 100);
+          ctx.font = "bold 34px Arial, sans-serif";
+          ctx.fillStyle = "#1f2a2c";
+          ctx.fillText(String(box[1]), x + 16, y + 14);
+          ctx.font = "20px Arial, sans-serif";
+          ctx.fillStyle = "#657274";
+          ctx.fillText(box[0], x + 16, y + 62);
+        });
+        y += 140;
+      }
 
       const groupRows = field => groupAttempts(attempts, field).map(group => [group.name, group.attempts, group.successes, `${group.rate}%`]);
       const countRows = mode => groupDeductionsByProject(attempts, mode)
@@ -2279,42 +2630,78 @@
           item.name,
           `${item.count}次`
         ]));
-      drawTable("按项目成功率", ["项目", "整套次数", "成功", "成功率"], groupRows("difficulty"), [420, 180, 180, 180]);
-      drawTable("按项目扣分点次数", ["项目", "扣分点", "次数"], countRows("point"), [320, 430, 160]);
-      drawTable("按项目扣分动作次数", ["项目", "扣分动作", "次数"], countRows("action"), [320, 430, 160]);
-
-      drawTable("历史记录", ["日期", "项目", "整套/动作", "整套次数", "成功", "成功率", "扣分点", "扣分动作", "备注"], records.map(item => [
-        item.date || "",
-        item.difficulty || "",
-        item.skill || "",
-        item.attempts || 0,
-        item.successes || 0,
-        `${Math.round((Number(item.successes || 0) / Math.max(1, Number(item.attempts || 1))) * 100)}%`,
-        item.deduction || "-",
-        item.deductionAction || "-",
-        item.notes || ""
-      ]), [130, 110, 145, 70, 70, 85, 90, 150, 280]);
+      if (sections.has("attempts")) {
+        drawTable("按项目成功率", ["项目", "整套次数", "成功", "成功率"], groupRows("difficulty"), [420, 180, 180, 180]);
+      }
+      if (sections.has("deductionPoints")) {
+        drawTable("按项目扣分点次数", ["项目", "扣分点", "次数"], countRows("point"), [320, 430, 160]);
+      }
+      if (sections.has("deductionActions")) {
+        drawTable("按项目扣分动作次数", ["项目", "扣分动作", "次数"], countRows("action"), [320, 430, 160]);
+      }
+      if (sections.has("results")) {
+        drawTable("比赛成绩", ["日期", "项目", "成绩", "名次", "备注"], results.map(item => [
+          item.date || "",
+          `${item.event || ""}${item.discipline ? ` · ${item.discipline}` : ""}`,
+          item.score || "-",
+          item.rank || "-",
+          item.notes || ""
+        ]), [130, 200, 100, 90, 350]);
+      }
+      if (sections.has("summaries")) {
+        drawTable("总结报告", ["日期", "总结名称", "疲劳", "内容"], summaries.map(item => [
+          item.date || "",
+          item.focus || "",
+          item.fatigue || "-",
+          item.content || ""
+        ]), [130, 180, 90, 470]);
+      }
+      if (sections.has("plans")) {
+        drawTable("训练计划", ["开始日期", "结束日期", "计划名称", "内容"], plans.map(item => [
+          item.startDate || "",
+          item.endDate || "",
+          item.goal || "",
+          item.tasks || ""
+        ]), [130, 130, 180, 430]);
+      }
+      if (sections.has("history")) {
+        drawTable("历史记录", ["日期", "项目", "整套/动作", "整套次数", "成功", "成功率", "扣分点", "扣分动作", "备注"], records.map(item => [
+          item.date || "",
+          item.difficulty || "",
+          item.skill || "",
+          item.attempts || 0,
+          item.successes || 0,
+          `${Math.round((Number(item.successes || 0) / Math.max(1, Number(item.attempts || 1))) * 100)}%`,
+          item.deduction || "-",
+          item.deductionAction || "-",
+          item.notes || ""
+        ]), [130, 110, 145, 70, 70, 85, 90, 150, 280]);
+      }
 
       return canvases;
     }
 
-    function createPdfReport(range = getPdfRange()) {
-      const canvases = buildPdfCanvases(range);
+    function createPdfReport(range = getPdfRange(), sections = getPdfSectionSelection()) {
+      const canvases = buildPdfCanvases(range, sections);
       const blob = makePdfBlobFromCanvases(canvases);
       return {
         blob,
-        filename: `${currentAthlete().name || "运动员"}训练成功率报告-${range.from}至${range.to}.pdf`
+        filename: `${sanitizePdfFilename(getPdfCustomTitle())}-${range.from}至${range.to}.pdf`
       };
     }
 
     function refreshPdfPreview() {
-      const report = createPdfReport(getPdfRange());
+      const range = getPdfRange();
+      const sections = getPdfSectionSelection();
+      const report = createPdfReport(range, sections);
       setLatestPdf(report.blob, report.filename);
       return report;
     }
 
     async function downloadPdfReport() {
-      const report = createPdfReport(getPdfRange());
+      const range = getPdfRange();
+      const sections = getPdfSectionSelection();
+      const report = createPdfReport(range, sections);
       await savePdfBlob(report.blob, report.filename);
     }
 
@@ -2323,25 +2710,118 @@
       refreshPdfPreview();
     }
 
-    let editingAttemptId = "";
+    let editingRecord = null;
 
     function openPdfDialog() {
+      renderPdfSelectors();
       syncPdfRangeInputs(getSelectedRange());
+      const titleInput = document.getElementById("pdfCustomTitle");
+      if (titleInput && !titleInput.value) titleInput.value = `${currentAthlete().name || "运动员"}训练成功率报告`;
+      const exportDateInput = document.getElementById("pdfExportDate");
+      if (exportDateInput && !exportDateInput.value) exportDateInput.value = today();
+      const rangeTextInput = document.getElementById("pdfRangeText");
+      if (rangeTextInput && !rangeTextInput.value) {
+        const range = getSelectedRange();
+        rangeTextInput.value = `${range.from} 至 ${range.to}`;
+      }
+      const projectInput = document.getElementById("pdfProjectName");
+      if (projectInput && !projectInput.value) projectInput.value = currentAthlete().sport || "-";
       document.getElementById("pdfDialog").classList.add("open");
     }
 
-    function openAttemptEditDialog(id) {
-      const athlete = currentAthlete();
-      const item = (athlete.attempts || []).find(record => record.id === id);
-      if (!item) return;
-      editingAttemptId = id;
-      setFormValues(document.getElementById("editAttemptForm"), item);
-      document.getElementById("editAttemptDialog").classList.add("open");
+    function normalizeEditKind(collection) {
+      return ({
+        results: "results",
+        summaries: "summaries",
+        plans: "plans",
+        attempts: "attempts"
+      })[collection] || "attempts";
     }
 
-    function closeAttemptEditDialog() {
-      editingAttemptId = "";
-      document.getElementById("editAttemptDialog").classList.remove("open");
+    function applyEditDialogVisibility(kind) {
+      document.querySelectorAll('#editRecordForm [data-kind]').forEach(section => {
+        const active = section.dataset.kind === kind;
+        section.hidden = !active;
+        section.querySelectorAll('input, select, textarea, button').forEach(control => {
+          if (control.closest('.export-actions')) return;
+          control.disabled = !active;
+        });
+      });
+      const title = {
+        results: "更改比赛成绩",
+        summaries: "更改总结报告",
+        plans: "更改训练计划",
+        attempts: "更改历史记录"
+      }[kind] || "更改历史记录";
+      document.getElementById("editRecordTitle").textContent = title;
+    }
+
+    function openEditRecordDialog(collection, id) {
+      const athlete = currentAthlete();
+      const list = athlete[collection] || [];
+      const item = list.find(record => record.id === id);
+      if (!item) return;
+      editingRecord = { collection, id };
+      const form = document.getElementById("editRecordForm");
+      setFormValues(form, item);
+      applyEditDialogVisibility(normalizeEditKind(collection));
+      document.getElementById("editRecordDialog").classList.add("open");
+    }
+
+    function closeEditRecordDialog() {
+      editingRecord = null;
+      document.getElementById("editRecordDialog").classList.remove("open");
+    }
+
+    function saveEditedRecord(form) {
+      if (!editingRecord) return false;
+      const athlete = currentAthlete();
+      const collection = editingRecord.collection;
+      const index = (athlete[collection] || []).findIndex(item => item.id === editingRecord.id);
+      if (index < 0) return false;
+      const data = getFormData(form);
+      const next = { ...athlete[collection][index] };
+      if (collection === "results") {
+        Object.assign(next, {
+          date: data.date || "",
+          event: data.event || "",
+          discipline: data.discipline || "",
+          score: data.score || "",
+          rank: data.rank || "",
+          notes: data.notes || ""
+        });
+      } else if (collection === "summaries") {
+        Object.assign(next, {
+          date: data.date || "",
+          focus: data.focus || "",
+          fatigue: data.fatigue || "中",
+          content: data.content || ""
+        });
+      } else if (collection === "plans") {
+        Object.assign(next, {
+          startDate: data.startDate || "",
+          endDate: data.endDate || "",
+          goal: data.goal || "",
+          tasks: data.tasks || ""
+        });
+      } else if (collection === "attempts") {
+        const attempts = Math.max(1, Number(data.attempts || 1));
+        const successes = Math.min(attempts, Math.max(0, Number(data.successes || 0)));
+        Object.assign(next, {
+          date: data.date || "",
+          skill: data.skill || "",
+          difficulty: data.difficulty || "",
+          deduction: data.deduction || "无",
+          deductionAction: data.deductionAction || "无",
+          attempts,
+          successes,
+          notes: data.notes || ""
+        });
+      }
+      athlete[collection][index] = next;
+      closeEditRecordDialog();
+      render();
+      return true;
     }
 
     function newAthlete() {
@@ -2433,7 +2913,7 @@
       if (editButton) {
         event.preventDefault();
         const [collection, id] = editButton.dataset.edit.split(":");
-        if (collection === "attempts") openAttemptEditDialog(id);
+        openEditRecordDialog(collection, id);
         return;
       }
 
@@ -2505,6 +2985,18 @@
       refreshPdfPreview();
     });
 
+    document.getElementById("pdfDialog").addEventListener("change", event => {
+      if (!event.target.matches('input[name="pdfSection"], #pdfFrom, #pdfTo, #pdfCustomTitle, #pdfExportDate, #pdfRangeText, #pdfProjectName, input[name="pdfRecord"]')) return;
+      if (event.target.id === "pdfFrom" || event.target.id === "pdfTo") {
+        const from = document.getElementById("pdfFrom")?.value || "";
+        const to = document.getElementById("pdfTo")?.value || "";
+        const rangeText = document.getElementById("pdfRangeText");
+        if (rangeText) rangeText.value = from && to ? `${from} 至 ${to}` : rangeText.value;
+      }
+      if (!document.getElementById("pdfDialog").classList.contains("open")) return;
+      refreshPdfPreview();
+    });
+
     document.getElementById("downloadPdf").addEventListener("click", async () => {
       const report = refreshPdfPreview();
       await savePdfBlob(report.blob, report.filename);
@@ -2514,24 +3006,15 @@
       document.getElementById("pdfDialog").classList.remove("open");
     });
 
-    document.getElementById("cancelEditAttempt").addEventListener("click", closeAttemptEditDialog);
+    document.getElementById("cancelEditRecord").addEventListener("click", closeEditRecordDialog);
 
-    document.getElementById("editAttemptForm").addEventListener("submit", event => {
+    document.getElementById("editRecordForm").addEventListener("submit", event => {
       event.preventDefault();
-      const athlete = currentAthlete();
-      const index = (athlete.attempts || []).findIndex(item => item.id === editingAttemptId);
-      if (index < 0) return;
-      const data = getFormData(event.currentTarget);
-      const attempts = Math.max(1, Number(data.attempts || 1));
-      const successes = Math.min(attempts, Math.max(0, Number(data.successes || 0)));
-      athlete.attempts[index] = {
-        ...athlete.attempts[index],
-        ...data,
-        attempts,
-        successes
-      };
-      closeAttemptEditDialog();
-      render();
+      saveEditedRecord(event.currentTarget);
+    });
+
+    document.getElementById("saveEditRecord").addEventListener("click", () => {
+      saveEditedRecord(document.getElementById("editRecordForm"));
     });
 
     document.getElementById("importData").addEventListener("click", () => {
