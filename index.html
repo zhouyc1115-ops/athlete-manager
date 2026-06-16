@@ -291,6 +291,20 @@
       justify-content: flex-end;
     }
 
+    .sync-status {
+      min-height: 38px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #fff;
+      color: var(--track-dark);
+      border-color: var(--line);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
     .workspace {
       padding: 24px 26px 32px;
       display: grid;
@@ -750,6 +764,32 @@
       text-decoration: underline;
     }
 
+    .sync-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .sync-grid label {
+      display: grid;
+      gap: 6px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 650;
+      margin: 0;
+    }
+
+    .sync-grid input {
+      width: 100%;
+    }
+
+    .sync-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .mobile-menu { display: none; }
 
     svg {
@@ -900,6 +940,10 @@
           <button class="secondary" id="exportData" title="导出数据">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             导出
+          </button>
+          <button class="sync-status" id="syncStatus" type="button" title="云同步设置">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
+            云同步
           </button>
           <button class="secondary" id="exportPdf" title="导出PDF">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
@@ -1169,6 +1213,32 @@
     </div>
   </div>
 
+  <div class="export-dialog" id="syncDialog" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
+    <div class="export-box">
+      <h3 id="syncTitle">云同步</h3>
+      <p id="syncHint">把同一份数据保存到 GitHub 仓库，手机和电脑就能读到同一份内容。</p>
+      <div class="sync-grid">
+        <label>仓库
+          <input id="syncRepo" placeholder="zhouyc1115-ops/athlete-manager">
+        </label>
+        <label>分支
+          <input id="syncBranch" placeholder="main">
+        </label>
+        <label>数据路径
+          <input id="syncPath" placeholder="data/athlete-manager-state.json">
+        </label>
+        <label>访问令牌
+          <input id="syncToken" type="password" placeholder="GitHub Personal Access Token">
+        </label>
+      </div>
+      <div class="sync-actions">
+        <button class="secondary" id="closeSync" type="button">关闭</button>
+        <button class="secondary" id="pullCloud" type="button">从云端拉取</button>
+        <button class="primary" id="pushCloud" type="button">同步到云端</button>
+      </div>
+    </div>
+  </div>
+
   <div class="export-dialog" id="pdfDialog" role="dialog" aria-modal="true" aria-labelledby="pdfTitle">
     <div class="export-box">
       <h3 id="pdfTitle">PDF报告预览</h3>
@@ -1351,6 +1421,13 @@
     const today = () => toLocalIso(new Date());
     const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
     const rankOptions = ["第一名", "第二名", "第三名", "第四名", "第五名", "第六名", "第七名", "第八名"];
+    const syncConfigKey = "athlete-manager-sync-v1";
+    const defaultSyncConfig = {
+      ownerRepo: "zhouyc1115-ops/athlete-manager",
+      branch: "main",
+      path: "data/athlete-manager-state.json",
+      token: ""
+    };
 
     const icons = {
       trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>'
@@ -1369,6 +1446,10 @@
     }
 
     function normalizeStateData(data) {
+      data = data && typeof data === "object" ? data : {};
+      data.athletes = Array.isArray(data.athletes) ? data.athletes : [];
+      data.selectedId = data.selectedId || data.athletes[0]?.id || "";
+      data.updatedAt = data.updatedAt || "";
       (data.athletes || []).forEach(athlete => {
         (athlete.attempts || []).forEach(item => {
           item.deduction = normalizeDeductionLabel(item.deduction);
@@ -1807,6 +1888,10 @@
 }`));
 
     let state = load();
+    let syncConfig = loadSyncConfig();
+    let syncSaveTimer = null;
+    let syncBusy = false;
+    let lastSavedDigest = "";
 
     function load() {
       try {
@@ -1819,7 +1904,181 @@
     }
 
     function save() {
+      const digest = snapshotState(state);
+      if (digest === lastSavedDigest) return;
+      state.updatedAt = new Date().toISOString();
       localStorage.setItem(storageKey, JSON.stringify(state));
+      lastSavedDigest = snapshotState(state);
+      queueCloudSave();
+    }
+
+    function snapshotState(data) {
+      const clone = structuredClone(data);
+      delete clone.updatedAt;
+      return JSON.stringify(clone);
+    }
+
+    function loadSyncConfig() {
+      try {
+        return { ...defaultSyncConfig, ...(JSON.parse(localStorage.getItem(syncConfigKey) || "{}") || {}) };
+      } catch (error) {
+        return { ...defaultSyncConfig };
+      }
+    }
+
+    function saveSyncConfig(nextConfig) {
+      syncConfig = { ...defaultSyncConfig, ...nextConfig };
+      localStorage.setItem(syncConfigKey, JSON.stringify(syncConfig));
+      updateSyncStatus();
+    }
+
+    function hasSyncConfig() {
+      return Boolean(syncConfig.ownerRepo && syncConfig.branch && syncConfig.path && syncConfig.token);
+    }
+
+    function updateSyncStatus(text) {
+      const button = document.getElementById("syncStatus");
+      if (!button) return;
+      const base = hasSyncConfig() ? "云同步" : "未连接";
+      button.dataset.state = syncBusy ? "busy" : hasSyncConfig() ? "ready" : "idle";
+      button.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
+        ${escapeHtml(text || base)}
+      `;
+    }
+
+    function normalizeSyncPath(path) {
+      return String(path || "").replace(/^\/+/, "").replace(/\/+/g, "/").trim();
+    }
+
+    function getRepoParts() {
+      const [owner, repo] = String(syncConfig.ownerRepo || "").split("/");
+      return { owner: owner || "", repo: repo || "" };
+    }
+
+    function getGithubContentsUrl() {
+      const { owner, repo } = getRepoParts();
+      const path = normalizeSyncPath(syncConfig.path);
+      const encodedPath = path.split("/").map(part => encodeURIComponent(part)).join("/");
+      return owner && repo && encodedPath ? `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}` : "";
+    }
+
+    function textToBase64(text) {
+      const bytes = new TextEncoder().encode(text);
+      let binary = "";
+      bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+      return btoa(binary);
+    }
+
+    function base64ToText(base64) {
+      const binary = atob(String(base64 || "").replace(/\s+/g, ""));
+      const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    async function loadCloudState() {
+      if (!hasSyncConfig()) return null;
+      const url = getGithubContentsUrl();
+      if (!url) return null;
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${syncConfig.token}`
+        }
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        throw new Error(`拉取失败：${response.status}`);
+      }
+      const file = await response.json();
+      if (!file?.content) return null;
+      const remote = normalizeStateData(JSON.parse(base64ToText(file.content)));
+      remote.updatedAt = remote.updatedAt || file?.updatedAt || file?.commit?.committer?.date || "";
+      return { state: remote, sha: file.sha || "" };
+    }
+
+    async function pushCloudState() {
+      if (!hasSyncConfig()) return;
+      const url = getGithubContentsUrl();
+      if (!url) return;
+      syncBusy = true;
+      updateSyncStatus("同步中");
+      try {
+        let sha = "";
+        const current = await fetch(url, {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${syncConfig.token}`
+          }
+        });
+        if (current.ok) {
+          const file = await current.json();
+          sha = file.sha || "";
+        }
+        const payload = {
+          message: `Update athlete manager data ${new Date().toISOString()}`,
+          content: textToBase64(JSON.stringify(state, null, 2)),
+          branch: syncConfig.branch
+        };
+        if (sha) payload.sha = sha;
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${syncConfig.token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          throw new Error(`同步失败：${response.status}`);
+        }
+        updateSyncStatus("已同步");
+      } catch (error) {
+        console.warn(error);
+        updateSyncStatus("同步失败");
+      } finally {
+        syncBusy = false;
+      }
+    }
+
+    function queueCloudSave() {
+      if (!hasSyncConfig()) {
+        updateSyncStatus();
+        return;
+      }
+      clearTimeout(syncSaveTimer);
+      syncSaveTimer = setTimeout(() => {
+        void pushCloudState();
+      }, 700);
+      updateSyncStatus("待同步");
+    }
+
+    async function hydrateFromCloud() {
+      if (!hasSyncConfig()) return state;
+      updateSyncStatus("读取云端");
+      try {
+        const remote = await loadCloudState();
+        if (!remote?.state) {
+          updateSyncStatus("未发现云端");
+          return state;
+        }
+        const localTime = Date.parse(state.updatedAt || "") || 0;
+        const remoteTime = Date.parse(remote.state.updatedAt || "") || 0;
+        if (!localTime || remoteTime >= localTime) {
+          state = remote.state;
+          state.selectedId = state.selectedId || state.athletes[0]?.id;
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          lastSavedDigest = snapshotState(state);
+          updateSyncStatus("已拉取");
+        } else {
+          updateSyncStatus("本地较新");
+        }
+      } catch (error) {
+        console.warn(error);
+        updateSyncStatus("读取失败");
+      }
+      return state;
     }
 
     function currentAthlete() {
@@ -2929,6 +3188,20 @@
 
     let latestExportJson = "";
 
+    function openSyncDialog() {
+      const dialog = document.getElementById("syncDialog");
+      document.getElementById("syncRepo").value = syncConfig.ownerRepo || "";
+      document.getElementById("syncBranch").value = syncConfig.branch || "";
+      document.getElementById("syncPath").value = syncConfig.path || "";
+      document.getElementById("syncToken").value = syncConfig.token || "";
+      dialog.classList.add("open");
+      updateSyncStatus();
+    }
+
+    function closeSyncDialog() {
+      document.getElementById("syncDialog").classList.remove("open");
+    }
+
     function downloadJson(json) {
       const blob = new Blob([json], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -2956,6 +3229,41 @@
       const json = JSON.stringify(state, null, 2);
       downloadJson(json);
       openExportDialog(json);
+    });
+
+    document.getElementById("syncStatus").addEventListener("click", openSyncDialog);
+
+    document.getElementById("closeSync").addEventListener("click", closeSyncDialog);
+
+    document.getElementById("pushCloud").addEventListener("click", async () => {
+      saveSyncConfig({
+        ownerRepo: document.getElementById("syncRepo").value.trim(),
+        branch: document.getElementById("syncBranch").value.trim(),
+        path: document.getElementById("syncPath").value.trim(),
+        token: document.getElementById("syncToken").value.trim()
+      });
+      if (!hasSyncConfig()) {
+        alert("先把仓库、分支、路径和令牌填完整。");
+        return;
+      }
+      save();
+      await pushCloudState();
+      updateSyncStatus("已同步");
+    });
+
+    document.getElementById("pullCloud").addEventListener("click", async () => {
+      saveSyncConfig({
+        ownerRepo: document.getElementById("syncRepo").value.trim(),
+        branch: document.getElementById("syncBranch").value.trim(),
+        path: document.getElementById("syncPath").value.trim(),
+        token: document.getElementById("syncToken").value.trim()
+      });
+      if (!hasSyncConfig()) {
+        alert("先把仓库、分支、路径和令牌填完整。");
+        return;
+      }
+      await hydrateFromCloud();
+      render();
     });
 
     document.getElementById("downloadExport").addEventListener("click", () => {
@@ -3053,7 +3361,15 @@
     });
     syncStatRangeInputs();
 
-    render();
+    async function initializeApp() {
+      updateSyncStatus();
+      if (hasSyncConfig()) {
+        await hydrateFromCloud();
+      }
+      render();
+    }
+
+    initializeApp();
   </script>
 </body>
 </html>
