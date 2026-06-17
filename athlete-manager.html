@@ -1037,9 +1037,9 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             导出
           </button>
-        <button class="sync-status" id="syncStatus" type="button" title="一键同步">
+        <button class="sync-status" id="syncStatus" type="button" title="阿里云同步">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
-            一键同步
+            阿里云同步
           </button>
           <button class="secondary" id="exportPdf" title="导出PDF">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
@@ -1341,24 +1341,17 @@
 
   <div class="export-dialog" id="syncDialog" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
     <div class="export-box">
-      <h3 id="syncTitle">一键同步</h3>
-      <p id="syncHint">先填一次仓库和令牌，之后只要点“立即同步”就能把最新数据传到 GitHub。</p>
+      <h3 id="syncTitle">阿里云同步</h3>
+      <p id="syncHint">先填一次接口地址和密钥，之后只要点“立即同步”就能把最新数据传到你的阿里云服务。</p>
       <div class="sync-preset">
-        这是一次性设置。设置好以后，上传就不用再找 GitHub 页面了。
-        每台手机或电脑都需要各自保存一次。
+        这是一次性设置。设置好以后，手机和电脑都可以直接同步到同一份云端数据。
       </div>
       <div class="sync-grid">
-        <label>仓库
-          <input id="syncOwnerRepo" type="text" placeholder="例如：zhouyc1115-ops/athlete-manager">
+        <label>接口地址
+          <input id="syncEndpoint" type="url" placeholder="例如：https://api.your-domain.com/athlete-manager/state">
         </label>
-        <label>分支
-          <input id="syncBranch" type="text" placeholder="例如：main">
-        </label>
-        <label>数据路径
-          <input id="syncPath" type="text" placeholder="例如：data/athlete-manager-state.json">
-        </label>
-        <label>访问令牌
-          <input id="syncToken" type="password" placeholder="粘贴 GitHub 令牌">
+        <label>访问密钥
+          <input id="syncApiKey" type="password" placeholder="填写你的阿里云服务密钥">
         </label>
       </div>
       <div class="sync-actions">
@@ -1560,10 +1553,8 @@
       queryMode === "athlete" ? "athlete" : "coach";
     const athleteShareLocked = accessMode === "athlete";
     const defaultSyncConfig = {
-      ownerRepo: "zhouyc1115-ops/athlete-manager",
-      branch: "main",
-      path: "data/athlete-manager-state.json",
-      token: ""
+      endpoint: "",
+      apiKey: ""
     };
     const defaultCoachCode = "123456";
     const roleLabels = {
@@ -2171,7 +2162,9 @@
     function loadSyncConfig() {
       try {
         const raw = localStorage.getItem(syncConfigKey);
-        return raw ? { ...defaultSyncConfig, ...JSON.parse(raw) } : { ...defaultSyncConfig };
+        const parsed = raw ? JSON.parse(raw) : {};
+        if (parsed?.endpoint || parsed?.apiKey) return { ...defaultSyncConfig, ...parsed };
+        return { ...defaultSyncConfig, ...parsed };
       } catch (error) {
         console.warn(error);
         return { ...defaultSyncConfig };
@@ -2185,13 +2178,13 @@
     }
 
     function hasSyncConfig() {
-      return Boolean(syncConfig.ownerRepo && syncConfig.branch && syncConfig.path && syncConfig.token);
+      return Boolean(syncConfig.endpoint);
     }
 
     function updateSyncStatus(text) {
       const button = document.getElementById("syncStatus");
       if (!button) return;
-      const base = "一键同步";
+      const base = "阿里云同步";
       button.dataset.state = syncBusy ? "busy" : hasSyncConfig() ? "ready" : "idle";
       button.innerHTML = `
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
@@ -2199,85 +2192,56 @@
       `;
     }
 
-    function normalizeSyncPath(path) {
-      return String(path || "").replace(/^\/+/, "").replace(/\/+/g, "/").trim();
-    }
-
-    function getRepoParts() {
-      const [owner, repo] = String(syncConfig.ownerRepo || "").split("/");
-      return { owner: owner || "", repo: repo || "" };
-    }
-
-    function getGithubContentsUrl() {
-      const { owner, repo } = getRepoParts();
-      const path = normalizeSyncPath(syncConfig.path);
-      const encodedPath = path.split("/").map(part => encodeURIComponent(part)).join("/");
-      return owner && repo && encodedPath ? `https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}` : "";
-    }
-
-    function textToBase64(text) {
-      const bytes = new TextEncoder().encode(text);
-      let binary = "";
-      bytes.forEach(byte => { binary += String.fromCharCode(byte); });
-      return btoa(binary);
-    }
-
-    function base64ToText(base64) {
-      const binary = atob(String(base64 || "").replace(/\s+/g, ""));
-      const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
-      return new TextDecoder().decode(bytes);
+    function getSyncUrl() {
+      const endpoint = String(syncConfig.endpoint || "").trim();
+      return endpoint || "";
     }
 
     async function loadCloudState() {
       if (!hasSyncConfig()) return null;
-      const url = getGithubContentsUrl();
+      const url = getSyncUrl();
       if (!url) return null;
       const response = await fetch(url, {
         headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${syncConfig.token}`
+          Accept: "application/json",
+          ...(syncConfig.apiKey ? { "X-API-Key": syncConfig.apiKey } : {})
         }
       });
       if (response.status === 404) return null;
       if (response.status === 401) {
-        throw new Error("GitHub 拒绝了访问，通常是令牌无效、过期，或者当前设备还没保存同步设置。请重新保存令牌后再试。");
+        throw new Error("阿里云接口拒绝了访问，通常是密钥无效、过期，或者当前设备还没保存同步设置。请重新保存密钥后再试。");
       }
       if (!response.ok) {
         throw new Error(`拉取失败：${response.status}`);
       }
       const file = await response.json();
-      if (!file?.content) return null;
-      const remote = normalizeStateData(JSON.parse(base64ToText(file.content)));
-      remote.updatedAt = remote.updatedAt || file?.updatedAt || file?.commit?.committer?.date || "";
-      return { state: remote, sha: file.sha || "" };
+      const remoteState = file?.state ?? file;
+      if (!remoteState) return null;
+      return { state: normalizeStateData(remoteState), meta: file?.meta || null };
     }
 
     async function pushCloudState() {
       if (!hasSyncConfig()) throw new Error("请先保存同步设置");
-      const url = getGithubContentsUrl();
-      if (!url) throw new Error("仓库配置无效");
+      const url = getSyncUrl();
+      if (!url) throw new Error("接口地址无效");
       syncBusy = true;
       updateSyncStatus("同步中");
       try {
-        const remote = await loadCloudState();
         const payload = JSON.stringify(normalizeStateData(state), null, 2);
-        const body = {
-          message: `Update athlete manager data ${today()}`,
-          content: textToBase64(payload),
-          branch: syncConfig.branch
-        };
-        if (remote?.sha) body.sha = remote.sha;
         const response = await fetch(url, {
-          method: "PUT",
+          method: "POST",
           headers: {
-            Accept: "application/vnd.github+json",
+            Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${syncConfig.token}`
+            ...(syncConfig.apiKey ? { "X-API-Key": syncConfig.apiKey } : {})
           },
-          body: JSON.stringify(body)
+          body: JSON.stringify({
+            state: JSON.parse(payload),
+            updatedAt: state.updatedAt || new Date().toISOString()
+          })
         });
         if (response.status === 401) {
-          throw new Error("GitHub 拒绝了上传，通常是令牌无效、过期，或者没有仓库写入权限。请重新保存令牌后再试。");
+          throw new Error("阿里云接口拒绝了上传，通常是密钥无效、过期，或者没有写入权限。请重新保存密钥后再试。");
         }
         if (!response.ok) {
           const details = await response.text();
@@ -3563,16 +3527,12 @@
     }
 
     function openSyncDialog() {
-      const ownerRepo = document.getElementById("syncOwnerRepo");
-      const branch = document.getElementById("syncBranch");
-      const path = document.getElementById("syncPath");
-      const token = document.getElementById("syncToken");
-      if (ownerRepo) ownerRepo.value = syncConfig.ownerRepo || "";
-      if (branch) branch.value = syncConfig.branch || "";
-      if (path) path.value = syncConfig.path || "";
-      if (token) token.value = syncConfig.token || "";
+      const endpoint = document.getElementById("syncEndpoint");
+      const apiKey = document.getElementById("syncApiKey");
+      if (endpoint) endpoint.value = syncConfig.endpoint || "";
+      if (apiKey) apiKey.value = syncConfig.apiKey || "";
       document.getElementById("syncDialog").classList.add("open");
-      updateSyncStatus("一键同步");
+      updateSyncStatus("阿里云同步");
     }
 
     function closeSyncDialog() {
@@ -3621,15 +3581,13 @@
     document.getElementById("downloadSyncData").addEventListener("click", async () => {
       save();
       const nextConfig = {
-        ownerRepo: document.getElementById("syncOwnerRepo")?.value.trim(),
-        branch: document.getElementById("syncBranch")?.value.trim(),
-        path: document.getElementById("syncPath")?.value.trim(),
-        token: document.getElementById("syncToken")?.value.trim()
+        endpoint: document.getElementById("syncEndpoint")?.value.trim(),
+        apiKey: document.getElementById("syncApiKey")?.value.trim()
       };
       saveSyncConfig(nextConfig);
       try {
         await pushCloudState();
-        alert("已同步到 GitHub。");
+        alert("已同步到阿里云。");
         closeSyncDialog();
       } catch (error) {
         alert(error?.message || "同步失败");
@@ -3638,10 +3596,8 @@
 
     document.getElementById("saveSyncConfig").addEventListener("click", () => {
       const nextConfig = {
-        ownerRepo: document.getElementById("syncOwnerRepo")?.value.trim(),
-        branch: document.getElementById("syncBranch")?.value.trim(),
-        path: document.getElementById("syncPath")?.value.trim(),
-        token: document.getElementById("syncToken")?.value.trim()
+        endpoint: document.getElementById("syncEndpoint")?.value.trim(),
+        apiKey: document.getElementById("syncApiKey")?.value.trim()
       };
       saveSyncConfig(nextConfig);
       alert("设置已保存。以后点“立即同步”就行。");
