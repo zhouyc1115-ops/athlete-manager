@@ -949,13 +949,23 @@
       }
       .header-actions {
         width: 100%;
+        gap: 10px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
       }
       .header-actions button,
       .header-actions .sync-status {
         width: 100%;
+        min-height: 48px;
+        padding-top: 12px;
+        padding-bottom: 12px;
       }
       .header-actions .sync-status {
         justify-content: center;
+      }
+      .header-actions .sync-status svg {
+        width: 18px;
+        height: 18px;
       }
       .workspace {
         padding-bottom: 22px;
@@ -984,6 +994,13 @@
         gap: 8px;
       }
       .primary, .secondary { width: 100%; }
+      .button-row,
+      .sync-actions,
+      .export-actions,
+      .auth-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
       .header-actions { width: 100%; }
     }
   </style>
@@ -3594,7 +3611,7 @@
 
     document.getElementById("closeSync").addEventListener("click", closeSyncDialog);
 
-    document.getElementById("downloadSyncData").addEventListener("click", () => {
+    document.getElementById("downloadSyncData").addEventListener("click", async () => {
       save();
       const nextConfig = {
         ownerRepo: document.getElementById("syncOwnerRepo")?.value.trim(),
