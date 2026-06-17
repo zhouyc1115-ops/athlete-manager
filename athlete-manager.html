@@ -1345,6 +1345,7 @@
       <p id="syncHint">先填一次仓库和令牌，之后只要点“立即同步”就能把最新数据传到 GitHub。</p>
       <div class="sync-preset">
         这是一次性设置。设置好以后，上传就不用再找 GitHub 页面了。
+        每台手机或电脑都需要各自保存一次。
       </div>
       <div class="sync-grid">
         <label>仓库
@@ -2238,6 +2239,9 @@
         }
       });
       if (response.status === 404) return null;
+      if (response.status === 401) {
+        throw new Error("GitHub 拒绝了访问，通常是令牌无效、过期，或者当前设备还没保存同步设置。请重新保存令牌后再试。");
+      }
       if (!response.ok) {
         throw new Error(`拉取失败：${response.status}`);
       }
@@ -2272,6 +2276,9 @@
           },
           body: JSON.stringify(body)
         });
+        if (response.status === 401) {
+          throw new Error("GitHub 拒绝了上传，通常是令牌无效、过期，或者没有仓库写入权限。请重新保存令牌后再试。");
+        }
         if (!response.ok) {
           const details = await response.text();
           throw new Error(`同步失败：${response.status}${details ? ` ${details}` : ""}`);
