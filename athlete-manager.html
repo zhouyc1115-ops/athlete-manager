@@ -1020,9 +1020,9 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             导出
           </button>
-          <button class="sync-status" id="syncStatus" type="button" title="手动上传">
+        <button class="sync-status" id="syncStatus" type="button" title="一键同步">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
-            手动上传
+            一键同步
           </button>
           <button class="secondary" id="exportPdf" title="导出PDF">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
@@ -1324,15 +1324,29 @@
 
   <div class="export-dialog" id="syncDialog" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
     <div class="export-box">
-      <h3 id="syncTitle">手动上传</h3>
-      <p id="syncHint">点“下载数据”，然后去 GitHub 里把这个文件提交上去。</p>
+      <h3 id="syncTitle">一键同步</h3>
+      <p id="syncHint">先填一次仓库和令牌，之后只要点“立即同步”就能把最新数据传到 GitHub。</p>
       <div class="sync-preset">
-        只要把最新文件提交到仓库，电脑和手机就能看到同一份数据。
+        这是一次性设置。设置好以后，上传就不用再找 GitHub 页面了。
+      </div>
+      <div class="sync-grid">
+        <label>仓库
+          <input id="syncOwnerRepo" type="text" placeholder="例如：zhouyc1115-ops/athlete-manager">
+        </label>
+        <label>分支
+          <input id="syncBranch" type="text" placeholder="例如：main">
+        </label>
+        <label>数据路径
+          <input id="syncPath" type="text" placeholder="例如：data/athlete-manager-state.json">
+        </label>
+        <label>访问令牌
+          <input id="syncToken" type="password" placeholder="粘贴 GitHub 令牌">
+        </label>
       </div>
       <div class="sync-actions">
         <button class="secondary" id="closeSync" type="button">关闭</button>
-        <button class="secondary" id="copySyncData" type="button">复制数据</button>
-        <button class="primary" id="downloadSyncData" type="button">下载数据</button>
+        <button class="secondary" id="saveSyncConfig" type="button">保存设置</button>
+        <button class="primary" id="downloadSyncData" type="button">立即同步</button>
       </div>
     </div>
   </div>
@@ -2024,6 +2038,7 @@
       state.updatedAt = new Date().toISOString();
       localStorage.setItem(storageKey, JSON.stringify(state));
       lastSavedDigest = snapshotState(state);
+      queueCloudSave();
     }
 
     function loadSession() {
@@ -2136,7 +2151,13 @@
     }
 
     function loadSyncConfig() {
-      return { ...defaultSyncConfig };
+      try {
+        const raw = localStorage.getItem(syncConfigKey);
+        return raw ? { ...defaultSyncConfig, ...JSON.parse(raw) } : { ...defaultSyncConfig };
+      } catch (error) {
+        console.warn(error);
+        return { ...defaultSyncConfig };
+      }
     }
 
     function saveSyncConfig(nextConfig) {
@@ -2152,7 +2173,7 @@
     function updateSyncStatus(text) {
       const button = document.getElementById("syncStatus");
       if (!button) return;
-      const base = "手动上传";
+      const base = "一键同步";
       button.dataset.state = syncBusy ? "busy" : hasSyncConfig() ? "ready" : "idle";
       button.innerHTML = `
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
@@ -2211,14 +2232,65 @@
     }
 
     async function pushCloudState() {
-      return state;
+      if (!hasSyncConfig()) throw new Error("请先保存同步设置");
+      const url = getGithubContentsUrl();
+      if (!url) throw new Error("仓库配置无效");
+      syncBusy = true;
+      updateSyncStatus("同步中");
+      try {
+        const remote = await loadCloudState();
+        const payload = JSON.stringify(normalizeStateData(state), null, 2);
+        const body = {
+          message: `Update athlete manager data ${today()}`,
+          content: textToBase64(payload),
+          branch: syncConfig.branch
+        };
+        if (remote?.sha) body.sha = remote.sha;
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${syncConfig.token}`
+          },
+          body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+          const details = await response.text();
+          throw new Error(`同步失败：${response.status}${details ? ` ${details}` : ""}`);
+        }
+        return await response.json();
+      } finally {
+        syncBusy = false;
+        updateSyncStatus();
+      }
     }
 
     function queueCloudSave() {
-      return;
+      if (!hasSyncConfig()) return;
+      clearTimeout(syncSaveTimer);
+      syncSaveTimer = setTimeout(() => {
+        pushCloudState().catch(error => {
+          console.warn(error);
+          updateSyncStatus("同步失败");
+        });
+      }, 900);
     }
 
     async function hydrateFromCloud() {
+      if (!hasSyncConfig()) return state;
+      try {
+        const remote = await loadCloudState();
+        if (remote?.state) {
+          state = normalizeStateData(remote.state);
+          state.updatedAt = remote.state.updatedAt || new Date().toISOString();
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          lastSavedDigest = snapshotState(state);
+          render();
+        }
+      } catch (error) {
+        console.warn(error);
+      }
       return state;
     }
 
@@ -3467,8 +3539,16 @@
     }
 
     function openSyncDialog() {
+      const ownerRepo = document.getElementById("syncOwnerRepo");
+      const branch = document.getElementById("syncBranch");
+      const path = document.getElementById("syncPath");
+      const token = document.getElementById("syncToken");
+      if (ownerRepo) ownerRepo.value = syncConfig.ownerRepo || "";
+      if (branch) branch.value = syncConfig.branch || "";
+      if (path) path.value = syncConfig.path || "";
+      if (token) token.value = syncConfig.token || "";
       document.getElementById("syncDialog").classList.add("open");
-      updateSyncStatus("手动上传");
+      updateSyncStatus("一键同步");
     }
 
     function closeSyncDialog() {
@@ -3516,24 +3596,31 @@
 
     document.getElementById("downloadSyncData").addEventListener("click", () => {
       save();
-      downloadJson(JSON.stringify(state, null, 2));
-      updateSyncStatus("已下载");
+      const nextConfig = {
+        ownerRepo: document.getElementById("syncOwnerRepo")?.value.trim(),
+        branch: document.getElementById("syncBranch")?.value.trim(),
+        path: document.getElementById("syncPath")?.value.trim(),
+        token: document.getElementById("syncToken")?.value.trim()
+      };
+      saveSyncConfig(nextConfig);
+      try {
+        await pushCloudState();
+        alert("已同步到 GitHub。");
+        closeSyncDialog();
+      } catch (error) {
+        alert(error?.message || "同步失败");
+      }
     });
 
-    document.getElementById("copySyncData").addEventListener("click", async () => {
-      save();
-      const json = JSON.stringify(state, null, 2);
-      try {
-        await navigator.clipboard.writeText(json);
-        alert("已复制数据。");
-      } catch (error) {
-        const dialog = document.getElementById("exportDialog");
-        document.getElementById("exportText").value = json;
-        dialog.classList.add("open");
-        document.getElementById("exportText").focus();
-        document.getElementById("exportText").select();
-        alert("已打开复制窗口，可手动复制。");
-      }
+    document.getElementById("saveSyncConfig").addEventListener("click", () => {
+      const nextConfig = {
+        ownerRepo: document.getElementById("syncOwnerRepo")?.value.trim(),
+        branch: document.getElementById("syncBranch")?.value.trim(),
+        path: document.getElementById("syncPath")?.value.trim(),
+        token: document.getElementById("syncToken")?.value.trim()
+      };
+      saveSyncConfig(nextConfig);
+      alert("设置已保存。以后点“立即同步”就行。");
     });
 
     document.getElementById("downloadExport").addEventListener("click", () => {
