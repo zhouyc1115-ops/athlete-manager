@@ -1,0 +1,496 @@
+{
+  "selectedId": "55c10ca1-0264-4985-a01d-73c452e9e526",
+  "athletes": [
+    {
+      "id": "a1",
+      "name": "芝宁",
+      "gender": "女",
+      "birthDate": "",
+      "sport": "武术",
+      "height": "161",
+      "weight": "55",
+      "contact": "",
+      "notes": "已导入《芝宁太极训练成功率统计》PDF 明细。",
+      "results": [],
+      "summaries": [],
+      "plans": [],
+      "attempts": [
+        {
+          "id": "e04f9c02-cf18-49be-9937-a480c6d9209e",
+          "date": "2026-03-02",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "e55a38e7-6c19-4a44-8ed6-4fc98cc56dc5",
+          "date": "2026-03-03",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "57d6705b-1cf2-4cd0-9208-65420afc6a25",
+          "date": "2026-03-04",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "ff29ae8c-7a7a-4e11-b7af-6f724ad0c0f0",
+          "date": "2026-03-05",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "70A（晃动）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 2,
+          "successes": 1,
+          "notes": "正踢扣70a"
+        },
+        {
+          "id": "ebd1a039-b272-492a-8a89-653bae576e55",
+          "date": "2026-03-05",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "89497f1b-3315-42d6-bb79-35126d0c5587",
+          "date": "2026-03-06",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "5b3ce474-ba1a-44ec-ac66-e25e4813a5ed",
+          "date": "2026-03-06",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "70A（晃动）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 2,
+          "successes": 1,
+          "notes": "正踢扣70a"
+        },
+        {
+          "id": "8770c389-76f8-4eaa-ad2c-d3a8466ff5b1",
+          "date": "2026-03-11",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "94a5b79d-72b4-4ad0-b535-05714394ff6d",
+          "date": "2026-03-12",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 3,
+          "successes": 2,
+          "notes": "正踢扣踩地"
+        },
+        {
+          "id": "e6eee1ec-c692-4444-a6c1-4351c3f8cabb",
+          "date": "2026-03-12",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "70A（晃动）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 3,
+          "successes": 2,
+          "notes": "正踢扣70a"
+        },
+        {
+          "id": "feaf6b00-d1a0-43b7-ba12-7ace8ddfd82d",
+          "date": "2026-03-17",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "8e6a5329-ec2c-4561-9447-119165461cb3",
+          "date": "2026-03-17",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 0,
+          "notes": "站不稳"
+        },
+        {
+          "id": "802c6923-645a-4f15-abce-99135a22551c",
+          "date": "2026-03-18",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": "第二套可扣可不扣"
+        },
+        {
+          "id": "ba90d814-42f2-4403-9779-fbc7425e9c92",
+          "date": "2026-03-27",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 3,
+          "successes": 3,
+          "notes": ""
+        },
+        {
+          "id": "3785442b-aa0c-4cd1-a229-448ec77e96dd",
+          "date": "2026-03-30",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "99f78f31-cc72-47a7-9e9b-b1a3a3b4df18",
+          "date": "2026-03-31",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 3,
+          "successes": 2,
+          "notes": "起跳往右边"
+        },
+        {
+          "id": "b761df22-cf02-46f6-9791-2a42ee2e5875",
+          "date": "2026-04-02",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 1,
+          "notes": ""
+        },
+        {
+          "id": "0120e2cf-4f56-43c3-8a04-f72171a7b507",
+          "date": "2026-04-07",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "f263519a-6cad-4fdd-98d9-e1607f9be9c1",
+          "date": "2026-04-09",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 1,
+          "notes": "登地突然往右边"
+        },
+        {
+          "id": "9479c6a5-4de0-4e14-bed8-43de4df6cc40",
+          "date": "2026-04-09",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 3,
+          "successes": 0,
+          "notes": ""
+        },
+        {
+          "id": "31f99ece-4653-4198-8a97-79cebffd682f",
+          "date": "2026-04-13",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "2be9ecdd-d4b1-4d2b-a129-456e04d44fce",
+          "date": "2026-04-14",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "8cbcfca9-0c60-4b58-a778-3f8dac482056",
+          "date": "2026-04-15",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "d09ef9b4-1196-4df8-bfd3-f78ca97b75aa",
+          "date": "2026-04-15",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "5a1a2dee-77e0-489a-a664-53c244bdc11e",
+          "date": "2026-04-16",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "d994b782-9def-4a48-9de3-dbe8515e7cf7",
+          "date": "2026-04-16",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 1,
+          "notes": ""
+        },
+        {
+          "id": "8c5dfa06-6765-4ead-81d9-9dec7f7129d1",
+          "date": "2026-04-16",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "70A（晃动）",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 0,
+          "notes": "70a"
+        },
+        {
+          "id": "bf5f7d24-8d1a-4852-89f5-74bf71957508",
+          "date": "2026-04-20",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 1,
+          "notes": ""
+        },
+        {
+          "id": "3451c466-5e67-4bd3-a699-d7fa736505ab",
+          "date": "2026-04-21",
+          "skill": "整套完成",
+          "difficulty": "太极扇",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 1,
+          "notes": ""
+        },
+        {
+          "id": "d5e01784-9b1f-4f22-b40b-7325cc2f2d27",
+          "date": "2026-04-22",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 1,
+          "successes": 0,
+          "notes": ""
+        },
+        {
+          "id": "071e1042-2b1f-4c28-83c0-7b5bd7ce6284",
+          "date": "2026-06-05",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "70A（晃动）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 3,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "d3cf8a63-1d92-4996-a205-8e6d1936a3b8",
+          "date": "2026-06-06",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "70A（晃动）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 3,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "506b20c3-84df-49ac-8e0b-12f76e259a2e",
+          "date": "2026-06-09",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 3,
+          "successes": 3,
+          "notes": ""
+        },
+        {
+          "id": "15901ba0-514d-4ccf-a4b6-dc4dc1bfaef0",
+          "date": "2026-06-11",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 3,
+          "successes": 3,
+          "notes": ""
+        },
+        {
+          "id": "26efefcd-3de3-4448-a242-4164db176d8c",
+          "date": "2026-06-12",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "71（附加支撑）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 2,
+          "successes": 1,
+          "notes": "支撑"
+        },
+        {
+          "id": "0a262fed-8a0c-4033-94f7-3c98d8427569",
+          "date": "2026-06-13",
+          "skill": "整套完成",
+          "difficulty": "太极剑",
+          "deduction": "70A（晃动）",
+          "deductionAction": "腾空正踢腿",
+          "attempts": 3,
+          "successes": 2,
+          "notes": ""
+        },
+        {
+          "id": "03984bdc-6c63-47b3-9967-57c6575e25a8",
+          "date": "2026-06-16",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        }
+      ],
+      "accessCode": "254097"
+    },
+    {
+      "id": "fa7c270d-649a-4c19-a32f-74b9712dc24d",
+      "name": "俊凯",
+      "gender": "男",
+      "birthDate": "",
+      "sport": "武术",
+      "height": "172",
+      "weight": "70",
+      "contact": "",
+      "notes": "",
+      "results": [
+        {
+          "id": "903f8006-72f4-46b1-90e3-ec2881aeac21",
+          "event": "2026年世界大学生武术",
+          "date": "2026-06-16",
+          "discipline": "自选太极拳",
+          "score": "",
+          "rank": "第一名",
+          "notes": ""
+        },
+        {
+          "id": "621f4c8b-8ac9-4f16-8096-446b03261f1a",
+          "event": "2026年世界大学生武术",
+          "date": "2026-06-16",
+          "discipline": "自选太极剑",
+          "score": "",
+          "rank": "第二名",
+          "notes": ""
+        }
+      ],
+      "summaries": [],
+      "plans": [],
+      "attempts": [
+        {
+          "id": "ff252a70-a854-49d3-98fc-7e73be51851e",
+          "date": "2026-06-16",
+          "skill": "整套完成",
+          "difficulty": "太极拳",
+          "deduction": "无",
+          "deductionAction": "无",
+          "attempts": 2,
+          "successes": 2,
+          "notes": ""
+        }
+      ],
+      "accessCode": "391579"
+    },
+    {
+      "id": "55c10ca1-0264-4985-a01d-73c452e9e526",
+      "name": "666",
+      "gender": "女",
+      "birthDate": "",
+      "sport": "",
+      "accessCode": "666",
+      "height": "",
+      "weight": "",
+      "contact": "",
+      "notes": "",
+      "results": [],
+      "summaries": [],
+      "plans": [],
+      "attempts": []
+    }
+  ],
+  "updatedAt": "2026-06-17T03:50:12.152Z",
+  "settings": {
+    "coachCode": "123456"
+  }
+}
