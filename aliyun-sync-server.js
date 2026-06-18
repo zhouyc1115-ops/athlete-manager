@@ -6,6 +6,7 @@ const path = require("node:path");
 const port = Number(process.env.PORT || 3000);
 const stateFile = path.resolve(process.env.STATE_FILE || "./data/athlete-manager-state.json");
 const apiKey = String(process.env.SYNC_KEY || "").trim();
+const htmlFile = path.resolve(process.env.HTML_FILE || "/root/athlete-manager.html");
 
 async function readJsonBody(req) {
   const chunks = [];
@@ -29,6 +30,19 @@ async function saveState(nextState) {
   await fs.writeFile(stateFile, JSON.stringify(nextState, null, 2), "utf8");
 }
 
+async function serveHtml(res) {
+  try {
+    const html = await fs.readFile(htmlFile, "utf8");
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Access-Control-Allow-Origin": "*"
+    });
+    res.end(html);
+  } catch {
+    sendJson(res, 404, { error: "html_not_found", htmlFile });
+  }
+}
+
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -46,6 +60,8 @@ function checkKey(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const pathname = new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname;
+
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
@@ -56,23 +72,68 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === "/athlete.html" && req.method === "GET") {
+    res.writeHead(302, {
+      Location: "/athlete-manager.html?mode=athlete",
+      "Access-Control-Allow-Origin": "*"
+    });
+    res.end();
+    return;
+  }
+
+  if (pathname === "/" || pathname === "/index.html" || pathname === "/athlete-manager.html" || pathname === "/app") {
+    if (req.method === "GET") {
+      await serveHtml(res);
+      return;
+    }
+    if (req.method === "POST" || req.method === "PUT") {
+      if (!checkKey(req)) {
+        sendJson(res, 401, { error: "unauthorized" });
+        return;
+      }
+      try {
+        const body = await readJsonBody(req);
+        const nextState = body && body.state ? body.state : body;
+        if (!nextState || typeof nextState !== "object") {
+          sendJson(res, 400, { error: "invalid_state" });
+          return;
+        }
+        const saved = {
+          ...nextState,
+          updatedAt: body?.updatedAt || nextState.updatedAt || new Date().toISOString()
+        };
+        await saveState(saved);
+        sendJson(res, 200, { ok: true, state: saved });
+      } catch (error) {
+        sendJson(res, 400, { error: error?.message || "bad_request" });
+      }
+      return;
+    }
+    sendJson(res, 405, { error: "method_not_allowed" });
+    return;
+  }
+
+  if (pathname === "/api/health") {
+    if (!checkKey(req)) {
+      sendJson(res, 401, { error: "unauthorized" });
+      return;
+    }
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
   if (!checkKey(req)) {
     sendJson(res, 401, { error: "unauthorized" });
     return;
   }
 
-  if (req.url === "/health") {
-    sendJson(res, 200, { ok: true });
-    return;
-  }
-
-  if (req.url === "/" && req.method === "GET") {
+  if (pathname === "/api/" && req.method === "GET") {
     const state = await loadState();
     sendJson(res, 200, { state });
     return;
   }
 
-  if (req.url === "/" && (req.method === "POST" || req.method === "PUT")) {
+  if (pathname === "/api/" && (req.method === "POST" || req.method === "PUT")) {
     try {
       const body = await readJsonBody(req);
       const nextState = body && body.state ? body.state : body;
