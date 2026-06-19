@@ -2043,13 +2043,15 @@
       return normalizeStateData(structuredClone(sampleData));
     }
 
-    function save() {
+    function save(forceCloudSave = false) {
       const digest = snapshotState(state);
       if (digest === lastSavedDigest) return;
       state.updatedAt = new Date().toISOString();
       localStorage.setItem(storageKey, JSON.stringify(state));
       lastSavedDigest = snapshotState(state);
-      queueCloudSave();
+      if (forceCloudSave || currentRole() === "athlete") {
+        queueCloudSave();
+      }
     }
 
     function loadSession() {
@@ -2127,6 +2129,8 @@
         const el = document.getElementById(id);
         if (el) el.hidden = role !== "coach";
       });
+      const syncButton = document.getElementById("syncStatus");
+      if (syncButton) syncButton.hidden = role === "athlete";
       const forms = ["profileForm", "planForm", "summaryForm", "resultForm"];
       forms.forEach(id => {
         const form = document.getElementById(id);
@@ -2186,6 +2190,11 @@
     function updateSyncStatus(text) {
       const button = document.getElementById("syncStatus");
       if (!button) return;
+      if (currentRole() === "athlete") {
+        button.hidden = true;
+        return;
+      }
+      button.hidden = false;
       const base = "阿里云同步";
       button.dataset.state = syncBusy ? "busy" : hasSyncConfig() ? "ready" : "idle";
       button.innerHTML = `
@@ -2392,7 +2401,7 @@
       } else {
         state.selectedId = athlete.id;
       }
-      save();
+      save(currentRole() === "athlete");
       updateAuthStatus();
       applyAccessControl();
       renderAthletes(athlete);
@@ -3558,7 +3567,7 @@
       nextAthlete.accessCode = password;
       state.athletes.push(nextAthlete);
       state.selectedId = nextAthlete.id;
-      save();
+      save(true);
       saveSession({ role: "athlete", account, athleteId: nextAthlete.id });
       closeAuthDialog();
       render();
@@ -3591,6 +3600,7 @@
     }
 
     function openSyncDialog() {
+      if (currentRole() === "athlete") return;
       const endpoint = document.getElementById("syncEndpoint");
       const apiKey = document.getElementById("syncApiKey");
       if (endpoint) endpoint.value = syncConfig.endpoint || "";
