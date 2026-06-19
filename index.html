@@ -2160,6 +2160,7 @@
     function applyAccessControl() {
       const role = currentRole();
       document.body.dataset.role = role;
+      document.body.classList.toggle("athlete-mode", role === "athlete");
       document.querySelectorAll(".coach-only").forEach(node => {
         node.style.display = role === "coach" ? "" : "none";
       });
@@ -2174,12 +2175,13 @@
       });
       const syncButton = document.getElementById("syncStatus");
       if (syncButton) syncButton.hidden = role === "athlete";
-      const forms = ["profileForm", "planForm", "summaryForm", "resultForm"];
+      const forms = ["planForm", "summaryForm", "resultForm"];
       forms.forEach(id => {
         const form = document.getElementById(id);
         if (!form) return;
         form.querySelectorAll("input, select, textarea, button").forEach(el => {
           el.disabled = role !== "coach";
+          el.readOnly = role !== "coach" && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
         });
       });
       const attemptForm = document.getElementById("attemptForm");
