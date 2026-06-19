@@ -110,6 +110,10 @@ function checkKey(req) {
   return incoming === apiKey;
 }
 
+function isPublicRoute(pathname) {
+  return pathname === "/public/api/" || pathname === "/public/api";
+}
+
 const server = http.createServer(async (req, res) => {
   const pathname = new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname;
 
@@ -129,6 +133,33 @@ const server = http.createServer(async (req, res) => {
       "Access-Control-Allow-Origin": "*"
     });
     res.end();
+    return;
+  }
+
+  if (isPublicRoute(pathname) && req.method === "GET") {
+    const state = await loadState();
+    sendJson(res, 200, { state });
+    return;
+  }
+
+  if (isPublicRoute(pathname) && (req.method === "POST" || req.method === "PUT")) {
+    try {
+      const body = await readJsonBody(req);
+      const nextState = body && body.state ? body.state : body;
+      if (!nextState || typeof nextState !== "object") {
+        sendJson(res, 400, { error: "invalid_state" });
+        return;
+      }
+      const existing = await loadState();
+      const saved = mergeState(existing, {
+        ...nextState,
+        updatedAt: body?.updatedAt || nextState.updatedAt || new Date().toISOString()
+      });
+      await saveState(saved);
+      sendJson(res, 200, { ok: true, state: saved });
+    } catch (error) {
+      sendJson(res, 400, { error: error?.message || "bad_request" });
+    }
     return;
   }
 
@@ -170,6 +201,11 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 401, { error: "unauthorized" });
       return;
     }
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (pathname === "/public/api/health") {
     sendJson(res, 200, { ok: true });
     return;
   }
