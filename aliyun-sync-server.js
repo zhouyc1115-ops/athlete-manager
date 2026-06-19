@@ -30,6 +30,19 @@ async function saveState(nextState) {
   await fs.writeFile(stateFile, JSON.stringify(nextState, null, 2), "utf8");
 }
 
+function itemStamp(item) {
+  if (!item || typeof item !== "object") return 0;
+  const stamp = item.deletedAt || item.updatedAt || item.createdAt || "";
+  const time = Date.parse(stamp);
+  return Number.isFinite(time) ? time : 0;
+}
+
+function latestByStamp(left, right) {
+  if (!left) return structuredClone(right);
+  if (!right) return structuredClone(left);
+  return itemStamp(right) >= itemStamp(left) ? structuredClone(right) : structuredClone(left);
+}
+
 function mergeListById(remoteList, localList) {
   const merged = new Map();
   for (const item of Array.isArray(remoteList) ? remoteList : []) {
@@ -38,7 +51,7 @@ function mergeListById(remoteList, localList) {
   for (const item of Array.isArray(localList) ? localList : []) {
     if (!item?.id) continue;
     const previous = merged.get(item.id);
-    merged.set(item.id, previous ? { ...previous, ...structuredClone(item) } : structuredClone(item));
+    merged.set(item.id, latestByStamp(previous, item));
   }
   return [...merged.values()];
 }
@@ -46,7 +59,7 @@ function mergeListById(remoteList, localList) {
 function mergeAthlete(remoteAthlete, localAthlete) {
   if (!remoteAthlete) return structuredClone(localAthlete);
   if (!localAthlete) return structuredClone(remoteAthlete);
-  const merged = { ...structuredClone(remoteAthlete), ...structuredClone(localAthlete) };
+  const merged = latestByStamp(remoteAthlete, localAthlete);
   merged.results = mergeListById(remoteAthlete.results, localAthlete.results);
   merged.summaries = mergeListById(remoteAthlete.summaries, localAthlete.summaries);
   merged.plans = mergeListById(remoteAthlete.plans, localAthlete.plans);
@@ -73,9 +86,9 @@ function mergeState(existingState, incomingState) {
     athletes: [...athleteMap.values()]
   };
   merged.selectedId =
-    (local.selectedId && athleteMap.has(local.selectedId) && local.selectedId) ||
-    (remote.selectedId && athleteMap.has(remote.selectedId) && remote.selectedId) ||
-    merged.athletes[0]?.id ||
+    (local.selectedId && athleteMap.has(local.selectedId) && !athleteMap.get(local.selectedId)?.deletedAt && local.selectedId) ||
+    (remote.selectedId && athleteMap.has(remote.selectedId) && !athleteMap.get(remote.selectedId)?.deletedAt && remote.selectedId) ||
+    merged.athletes.find(athlete => !athlete.deletedAt)?.id ||
     "";
   merged.updatedAt = local.updatedAt || remote.updatedAt || new Date().toISOString();
   return merged;
