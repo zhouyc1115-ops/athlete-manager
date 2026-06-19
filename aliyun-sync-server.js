@@ -30,6 +30,57 @@ async function saveState(nextState) {
   await fs.writeFile(stateFile, JSON.stringify(nextState, null, 2), "utf8");
 }
 
+function mergeListById(remoteList, localList) {
+  const merged = new Map();
+  for (const item of Array.isArray(remoteList) ? remoteList : []) {
+    if (item?.id) merged.set(item.id, structuredClone(item));
+  }
+  for (const item of Array.isArray(localList) ? localList : []) {
+    if (!item?.id) continue;
+    const previous = merged.get(item.id);
+    merged.set(item.id, previous ? { ...previous, ...structuredClone(item) } : structuredClone(item));
+  }
+  return [...merged.values()];
+}
+
+function mergeAthlete(remoteAthlete, localAthlete) {
+  if (!remoteAthlete) return structuredClone(localAthlete);
+  if (!localAthlete) return structuredClone(remoteAthlete);
+  const merged = { ...structuredClone(remoteAthlete), ...structuredClone(localAthlete) };
+  merged.results = mergeListById(remoteAthlete.results, localAthlete.results);
+  merged.summaries = mergeListById(remoteAthlete.summaries, localAthlete.summaries);
+  merged.plans = mergeListById(remoteAthlete.plans, localAthlete.plans);
+  merged.attempts = mergeListById(remoteAthlete.attempts, localAthlete.attempts);
+  return merged;
+}
+
+function mergeState(existingState, incomingState) {
+  const remote = existingState && typeof existingState === "object" ? structuredClone(existingState) : {};
+  const local = incomingState && typeof incomingState === "object" ? structuredClone(incomingState) : {};
+  const athleteMap = new Map();
+  for (const athlete of Array.isArray(remote.athletes) ? remote.athletes : []) {
+    if (athlete?.id) athleteMap.set(athlete.id, athlete);
+  }
+  for (const athlete of Array.isArray(local.athletes) ? local.athletes : []) {
+    if (!athlete?.id) continue;
+    const previous = athleteMap.get(athlete.id);
+    athleteMap.set(athlete.id, previous ? mergeAthlete(previous, athlete) : structuredClone(athlete));
+  }
+  const merged = {
+    ...remote,
+    ...local,
+    settings: { ...(remote.settings || {}), ...(local.settings || {}) },
+    athletes: [...athleteMap.values()]
+  };
+  merged.selectedId =
+    (local.selectedId && athleteMap.has(local.selectedId) && local.selectedId) ||
+    (remote.selectedId && athleteMap.has(remote.selectedId) && remote.selectedId) ||
+    merged.athletes[0]?.id ||
+    "";
+  merged.updatedAt = local.updatedAt || remote.updatedAt || new Date().toISOString();
+  return merged;
+}
+
 async function serveHtml(res) {
   try {
     const html = await fs.readFile(htmlFile, "utf8");
@@ -98,10 +149,11 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 400, { error: "invalid_state" });
           return;
         }
-        const saved = {
+        const existing = await loadState();
+        const saved = mergeState(existing, {
           ...nextState,
           updatedAt: body?.updatedAt || nextState.updatedAt || new Date().toISOString()
-        };
+        });
         await saveState(saved);
         sendJson(res, 200, { ok: true, state: saved });
       } catch (error) {
@@ -141,10 +193,11 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 400, { error: "invalid_state" });
         return;
       }
-      const saved = {
+      const existing = await loadState();
+      const saved = mergeState(existing, {
         ...nextState,
         updatedAt: body?.updatedAt || nextState.updatedAt || new Date().toISOString()
-      };
+      });
       await saveState(saved);
       sendJson(res, 200, { ok: true, state: saved });
     } catch (error) {
