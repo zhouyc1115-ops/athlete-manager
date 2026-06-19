@@ -1037,9 +1037,9 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             导出
           </button>
-        <button class="sync-status" id="syncStatus" type="button" title="阿里云同步">
+        <button class="sync-status" id="syncStatus" type="button" title="同步">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
-            阿里云同步
+            同步
           </button>
           <button class="secondary" id="exportPdf" title="导出PDF">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
@@ -1341,8 +1341,8 @@
 
   <div class="export-dialog" id="syncDialog" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
     <div class="export-box">
-      <h3 id="syncTitle">阿里云同步</h3>
-      <p id="syncHint">先填一次接口地址和密钥，之后只要点“立即同步”就能把最新数据传到你的阿里云服务。</p>
+      <h3 id="syncTitle">同步</h3>
+      <p id="syncHint">先填一次接口地址和密钥，之后只要点“立即同步”就能把最新数据传到你的云端服务。</p>
       <div class="sync-preset">
         这是一次性设置。设置好以后，手机和电脑都可以直接同步到同一份云端数据。
       </div>
@@ -1580,10 +1580,47 @@
       return deductionLabels[value] || value || "无";
     }
 
+    function itemStamp(item) {
+      if (!item || typeof item !== "object") return 0;
+      const stamp = item.deletedAt || item.updatedAt || item.createdAt || "";
+      const time = Date.parse(stamp);
+      return Number.isFinite(time) ? time : 0;
+    }
+
+    function isActiveItem(item) {
+      return !item?.deletedAt;
+    }
+
+    function activeAthletes(list = state.athletes) {
+      return (Array.isArray(list) ? list : []).filter(isActiveItem);
+    }
+
+    function latestByStamp(left, right) {
+      if (!left) return structuredClone(right);
+      if (!right) return structuredClone(left);
+      return itemStamp(right) >= itemStamp(left) ? structuredClone(right) : structuredClone(left);
+    }
+
+    function mergeById(remoteList, localList) {
+      const merged = new Map();
+      for (const item of Array.isArray(remoteList) ? remoteList : []) {
+        if (item?.id) merged.set(item.id, structuredClone(item));
+      }
+      for (const item of Array.isArray(localList) ? localList : []) {
+        if (!item?.id) continue;
+        const previous = merged.get(item.id);
+        merged.set(item.id, latestByStamp(previous, item));
+      }
+      return [...merged.values()];
+    }
+
     function normalizeStateData(data) {
       data = data && typeof data === "object" ? data : {};
       data.athletes = Array.isArray(data.athletes) ? data.athletes : [];
-      data.selectedId = data.selectedId || data.athletes[0]?.id || "";
+      const visibleAthletes = activeAthletes(data.athletes);
+      data.selectedId = data.selectedId && visibleAthletes.some(athlete => athlete.id === data.selectedId)
+        ? data.selectedId
+        : visibleAthletes[0]?.id || "";
       data.updatedAt = data.updatedAt || "";
       data.settings = {
         coachCode: data.settings?.coachCode || defaultCoachCode,
@@ -1591,7 +1628,11 @@
       };
       (data.athletes || []).forEach(athlete => {
         athlete.accessCode = athlete.accessCode || String(Math.floor(100000 + Math.random() * 900000));
+        athlete.updatedAt = athlete.updatedAt || "";
+        athlete.deletedAt = athlete.deletedAt || "";
         (athlete.attempts || []).forEach(item => {
+          item.updatedAt = item.updatedAt || "";
+          item.deletedAt = item.deletedAt || "";
           item.deduction = normalizeDeductionLabel(item.deduction);
         });
       });
@@ -2049,7 +2090,7 @@
       state.updatedAt = new Date().toISOString();
       localStorage.setItem(storageKey, JSON.stringify(state));
       lastSavedDigest = snapshotState(state);
-      if (forceCloudSave || currentRole() === "athlete") {
+      if (forceCloudSave || currentRole() === "athlete" || (currentRole() === "coach" && hasSyncConfig())) {
         queueCloudSave();
       }
     }
@@ -2084,6 +2125,7 @@
       }
       updateAuthStatus();
       applyAccessControl();
+      refreshCloudPolling();
     }
 
     function currentRole() {
@@ -2092,16 +2134,17 @@
     }
 
     function currentAthleteId() {
+      const visibleAthletes = activeAthletes();
       if (currentRole() === "athlete") return session.athleteId || "";
-      return session.athleteId || state.selectedId || state.athletes[0]?.id || "";
+      return session.athleteId || state.selectedId || visibleAthletes[0]?.id || "";
     }
 
     function currentAthlete() {
       if (currentRole() === "athlete") {
         const athleteId = currentAthleteId();
-        return athleteId ? state.athletes.find(a => a.id === athleteId) || null : null;
+        return athleteId ? state.athletes.find(a => a.id === athleteId && !a.deletedAt) || null : null;
       }
-      return state.athletes.find(a => a.id === state.selectedId) || state.athletes[0];
+      return state.athletes.find(a => a.id === state.selectedId && !a.deletedAt) || activeAthletes()[0] || null;
     }
 
     function updateAuthStatus() {
@@ -2181,10 +2224,25 @@
       syncConfig = { ...defaultSyncConfig, ...nextConfig };
       localStorage.setItem(syncConfigKey, JSON.stringify(syncConfig));
       updateSyncStatus();
+      refreshCloudPolling();
+    }
+
+    let cloudPollTimer = null;
+
+    function refreshCloudPolling() {
+      if (cloudPollTimer) {
+        clearInterval(cloudPollTimer);
+        cloudPollTimer = null;
+      }
+      if (currentRole() !== "coach" || !hasSyncConfig()) return;
+      cloudPollTimer = setInterval(() => {
+        if (syncBusy) return;
+        hydrateFromCloud().catch(error => console.warn(error));
+      }, 10000);
     }
 
     function hasSyncConfig() {
-      return Boolean(syncConfig.endpoint);
+      return Boolean(syncConfig.endpoint || currentRole() === "athlete");
     }
 
     function updateSyncStatus(text) {
@@ -2195,7 +2253,7 @@
         return;
       }
       button.hidden = false;
-      const base = "阿里云同步";
+      const base = "同步";
       button.dataset.state = syncBusy ? "busy" : hasSyncConfig() ? "ready" : "idle";
       button.innerHTML = `
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.5-7.97A5 5 0 0 1 16.9 8a3.5 3.5 0 0 1 1.1 6.84"/><path d="M12 12v9"/><path d="m8.5 17.5 3.5 3.5 3.5-3.5"/></svg>
@@ -2205,28 +2263,22 @@
 
     function getSyncUrl() {
       const endpoint = String(syncConfig.endpoint || "").trim();
+      if (currentRole() === "athlete") {
+        return `${location.origin.replace(/\/$/, "")}/public/api/`;
+      }
       if (!endpoint) return "";
       if (/\/api\/?$/.test(endpoint)) return endpoint.replace(/\/?$/, "/");
       return endpoint.replace(/\/?$/, "/") + "api/";
     }
 
     function mergeRecordList(remoteList, localList) {
-      const merged = new Map();
-      for (const item of Array.isArray(remoteList) ? remoteList : []) {
-        if (item?.id) merged.set(item.id, structuredClone(item));
-      }
-      for (const item of Array.isArray(localList) ? localList : []) {
-        if (!item?.id) continue;
-        const previous = merged.get(item.id);
-        merged.set(item.id, previous ? { ...previous, ...structuredClone(item) } : structuredClone(item));
-      }
-      return [...merged.values()];
+      return mergeById(remoteList, localList);
     }
 
     function mergeAthleteData(remoteAthlete, localAthlete) {
       if (!remoteAthlete) return structuredClone(localAthlete);
       if (!localAthlete) return structuredClone(remoteAthlete);
-      const merged = { ...structuredClone(remoteAthlete), ...structuredClone(localAthlete) };
+      const merged = latestByStamp(remoteAthlete, localAthlete);
       merged.results = mergeRecordList(remoteAthlete.results, localAthlete.results);
       merged.summaries = mergeRecordList(remoteAthlete.summaries, localAthlete.summaries);
       merged.plans = mergeRecordList(remoteAthlete.plans, localAthlete.plans);
@@ -2253,9 +2305,9 @@
         athletes: [...athleteMap.values()]
       };
       merged.selectedId =
-        (local.selectedId && athleteMap.has(local.selectedId) && local.selectedId) ||
-        (remote.selectedId && athleteMap.has(remote.selectedId) && remote.selectedId) ||
-        merged.athletes[0]?.id ||
+        (local.selectedId && athleteMap.has(local.selectedId) && !athleteMap.get(local.selectedId)?.deletedAt && local.selectedId) ||
+        (remote.selectedId && athleteMap.has(remote.selectedId) && !athleteMap.get(remote.selectedId)?.deletedAt && remote.selectedId) ||
+        activeAthletes(merged.athletes)[0]?.id ||
         "";
       merged.updatedAt = [remote.updatedAt, local.updatedAt, new Date().toISOString()].filter(Boolean).sort().pop() || new Date().toISOString();
       return normalizeStateData(merged);
@@ -2387,19 +2439,19 @@
     }
 
     function render() {
-      if (!state.athletes.length) {
+      if (!activeAthletes(state.athletes).length) {
         const athlete = newAthlete();
         state.athletes.push(athlete);
         state.selectedId = athlete.id;
       }
-      const athlete = currentAthlete();
+      const athlete = currentAthlete() || activeAthletes()[0] || null;
       if (currentRole() === "athlete") {
         if (athlete) {
           state.selectedId = athlete.id;
           session.athleteId = athlete.id;
         }
       } else {
-        state.selectedId = athlete.id;
+        state.selectedId = athlete?.id || "";
       }
       save(currentRole() === "athlete");
       updateAuthStatus();
@@ -2441,8 +2493,9 @@
         ` : "";
         return;
       }
-      document.getElementById("athleteList").innerHTML = state.athletes.map(a => `
-        <button class="athlete-item ${a.id === active.id ? "active" : ""}" data-select="${a.id}" title="切换到 ${escapeHtml(a.name)}">
+      const visibleAthletes = activeAthletes();
+      document.getElementById("athleteList").innerHTML = visibleAthletes.map(a => `
+        <button class="athlete-item ${a.id === active?.id ? "active" : ""}" data-select="${a.id}" title="切换到 ${escapeHtml(a.name)}">
           <span class="avatar">${escapeHtml(initials(a.name))}</span>
           <span>
             <span class="athlete-name">${escapeHtml(a.name || "未命名")}</span>
@@ -2466,12 +2519,17 @@
     }
 
     function recordShell(items, emptyText, mapper) {
-      if (!items.length) return `<div class="empty">${emptyText}</div>`;
-      return [...items].sort((a, b) => (b.date || b.startDate || "").localeCompare(a.date || a.startDate || "")).map(mapper).join("");
+      const visibleItems = (Array.isArray(items) ? items : []).filter(isActiveItem);
+      if (!visibleItems.length) return `<div class="empty">${emptyText}</div>`;
+      return [...visibleItems].sort((a, b) => (b.date || b.startDate || "").localeCompare(a.date || a.startDate || "")).map(mapper).join("");
     }
 
     function renderRecords(athlete) {
-      document.getElementById("resultList").innerHTML = recordShell(athlete.results || [], "还没有比赛成绩记录", item => `
+      const results = athlete.results || [];
+      const summaries = athlete.summaries || [];
+      const plans = athlete.plans || [];
+      const attempts = athlete.attempts || [];
+      document.getElementById("resultList").innerHTML = recordShell(results, "还没有比赛成绩记录", item => `
         <article class="record">
           <div class="record-top">
             <div>
@@ -2491,7 +2549,7 @@
         </article>
       `);
 
-      document.getElementById("summaryList").innerHTML = recordShell(athlete.summaries || [], "还没有总结报告", item => `
+      document.getElementById("summaryList").innerHTML = recordShell(summaries, "还没有总结报告", item => `
         <article class="record">
           <div class="record-top">
             <div>
@@ -2508,7 +2566,7 @@
         </article>
       `);
 
-      document.getElementById("planList").innerHTML = recordShell(athlete.plans || [], "还没有训练计划", item => `
+      document.getElementById("planList").innerHTML = recordShell(plans, "还没有训练计划", item => `
         <article class="record">
           <div class="record-top">
             <div>
@@ -2524,7 +2582,7 @@
         </article>
       `);
 
-      document.getElementById("attemptList").innerHTML = recordShell(athlete.attempts || [], "还没有项目动作记录", item => `
+      document.getElementById("attemptList").innerHTML = recordShell(attempts, "还没有项目动作记录", item => `
         <article class="record">
           <div class="record-top">
             <div>
@@ -2549,7 +2607,7 @@
     }
 
     function renderStats(athlete) {
-      const allAttempts = athlete.attempts || [];
+      const allAttempts = (athlete.attempts || []).filter(isActiveItem);
       const range = getSelectedRange();
       const attempts = filterAttemptsByRange(allAttempts, range);
       const totalAttempts = attempts.reduce((sum, item) => sum + Number(item.attempts || 0), 0);
@@ -2725,6 +2783,7 @@
 
     function filterRecordsByRange(items, getDates, range = getPdfRange()) {
       return (items || []).filter(item => {
+        if (!isActiveItem(item)) return false;
         const dates = getDates(item).filter(Boolean);
         if (!dates.length) return true;
         return dates.some(date => date >= range.from && date <= range.to);
@@ -2796,16 +2855,16 @@
 
     function renderPdfSelectors() {
       const athlete = currentAthlete();
-      populatePdfSelect("pdfResultList", athlete.results || [], "results", "比赛成绩");
-      populatePdfSelect("pdfSummaryList", athlete.summaries || [], "summaries", "总结报告");
-      populatePdfSelect("pdfPlanList", athlete.plans || [], "plans", "训练计划");
+      populatePdfSelect("pdfResultList", (athlete.results || []).filter(isActiveItem), "results", "比赛成绩");
+      populatePdfSelect("pdfSummaryList", (athlete.summaries || []).filter(isActiveItem), "summaries", "总结报告");
+      populatePdfSelect("pdfPlanList", (athlete.plans || []).filter(isActiveItem), "plans", "训练计划");
     }
 
     function selectPdfRecords(items, listId) {
       const selectedIds = getPdfSelectedRecordIds(listId);
       if (!selectedIds.length) return items || [];
       const selectedSet = new Set(selectedIds);
-      return (items || []).filter(item => selectedSet.has(item.id));
+      return (items || []).filter(item => item && !item.deletedAt && selectedSet.has(item.id));
     }
 
     function sanitizePdfFilename(value) {
@@ -3388,7 +3447,7 @@
           notes: data.notes || ""
         });
       }
-      athlete[collection][index] = next;
+      athlete[collection][index] = { ...next, updatedAt: new Date().toISOString(), deletedAt: "" };
       closeEditRecordDialog();
       render();
       return true;
@@ -3402,6 +3461,8 @@
         birthDate: "",
         sport: "",
         accessCode: String(Math.floor(100000 + Math.random() * 900000)),
+        updatedAt: new Date().toISOString(),
+        deletedAt: "",
         height: "",
         weight: "",
         contact: "",
@@ -3432,20 +3493,21 @@
     document.getElementById("profileForm").addEventListener("submit", event => {
       event.preventDefault();
       if (!isCoach()) return;
-      Object.assign(currentAthlete(), getFormData(event.currentTarget));
+      Object.assign(currentAthlete(), getFormData(event.currentTarget), { updatedAt: new Date().toISOString(), deletedAt: "" });
       render();
     });
 
     document.getElementById("deleteAthlete").addEventListener("click", () => {
       if (!isCoach()) return;
       const athlete = currentAthlete();
-      if (state.athletes.length <= 1) {
+      if (activeAthletes().length <= 1) {
         alert("至少保留一名运动员。");
         return;
       }
       if (!confirm(`删除 ${athlete.name || "当前运动员"} 及其全部记录？`)) return;
-      state.athletes = state.athletes.filter(a => a.id !== athlete.id);
-      state.selectedId = state.athletes[0]?.id;
+      athlete.deletedAt = new Date().toISOString();
+      athlete.updatedAt = athlete.deletedAt;
+      state.selectedId = activeAthletes().find(a => a.id !== athlete.id)?.id || activeAthletes()[0]?.id || "";
       render();
     });
 
@@ -3464,7 +3526,7 @@
         const athlete = currentAthlete();
         const data = transform(getFormData(form));
         athlete[collection] = athlete[collection] || [];
-        athlete[collection].push({ id: uid(), ...data });
+        athlete[collection].push({ id: uid(), ...data, updatedAt: new Date().toISOString(), deletedAt: "" });
         form.reset();
         [...form.querySelectorAll("input[type=date]")].forEach(input => input.value = today());
         const attemptsInput = form.querySelector("[name=attempts]");
@@ -3501,7 +3563,11 @@
       const [collection, id] = button.dataset.delete.split(":");
       const athlete = currentAthlete();
       if (!["results", "summaries", "plans", "attempts"].includes(collection)) return;
-      athlete[collection] = (athlete[collection] || []).filter(item => item.id !== id);
+      const target = (athlete[collection] || []).find(item => item.id === id);
+      if (target) {
+        target.deletedAt = new Date().toISOString();
+        target.updatedAt = target.deletedAt;
+      }
       render();
     });
 
@@ -3541,7 +3607,7 @@
           alert("教练密码不正确。");
           return;
         }
-        saveSession({ role: "coach", account: "coach", athleteId: state.selectedId || state.athletes[0]?.id || "" });
+        saveSession({ role: "coach", account: "coach", athleteId: state.selectedId || activeAthletes()[0]?.id || "" });
         closeAuthDialog();
         render();
         return;
@@ -3567,7 +3633,7 @@
       nextAthlete.accessCode = password;
       state.athletes.push(nextAthlete);
       state.selectedId = nextAthlete.id;
-      save(true);
+      save();
       saveSession({ role: "athlete", account, athleteId: nextAthlete.id });
       closeAuthDialog();
       render();
@@ -3606,7 +3672,7 @@
       if (endpoint) endpoint.value = syncConfig.endpoint || "";
       if (apiKey) apiKey.value = syncConfig.apiKey || "";
       document.getElementById("syncDialog").classList.add("open");
-      updateSyncStatus("阿里云同步");
+      updateSyncStatus("同步");
     }
 
     function closeSyncDialog() {
@@ -3653,7 +3719,7 @@
     document.getElementById("closeSync").addEventListener("click", closeSyncDialog);
 
     document.getElementById("downloadSyncData").addEventListener("click", async () => {
-      save();
+      save(true);
       const nextConfig = {
         endpoint: document.getElementById("syncEndpoint")?.value.trim(),
         apiKey: document.getElementById("syncApiKey")?.value.trim()
@@ -3790,6 +3856,7 @@
         await hydrateFromCloud();
       }
       render();
+      refreshCloudPolling();
       if (!hasSavedSession || athleteShareLocked) openAuthDialog();
     }
 
