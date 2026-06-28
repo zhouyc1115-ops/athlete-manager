@@ -20,7 +20,6 @@
     const container =
       select.closest('div, label, .field, .form-field, .row, .card, .panel') ||
       select.parentElement;
-
     if (!container) return '';
 
     const labels = Array.from(container.querySelectorAll('label'));
