@@ -3900,5 +3900,120 @@
 
     initializeApp();
   </script>
+<script>
+(function () {
+  const STORAGE_KEY = 'athlete-manager-custom-options-v1';
+  const TARGETS = ['整套/动作', '项目', '扣分点', '扣分动作'];
+
+  function loadState() {
+    try {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      return data && typeof data === 'object' ? data : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function getLabelText(select) {
+    const container =
+      select.closest('div, label, .field, .form-field, .row, .card, .panel') ||
+      select.parentElement;
+    if (!container) return '';
+
+    const labels = Array.from(container.querySelectorAll('label'));
+    for (const label of labels) {
+      const text = (label.textContent || '').trim();
+      if (text) return text;
+    }
+
+    return (container.textContent || '').trim();
+  }
+
+  function matchTarget(select) {
+    const labelText = getLabelText(select);
+    return TARGETS.find(target => labelText.includes(target)) || '';
+  }
+
+  function ensureButton(select, target) {
+    if (select.dataset.customButtonReady === '1') return;
+
+    const parent = select.parentElement;
+    if (!parent) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '＋自定义';
+    btn.style.marginLeft = '8px';
+    btn.style.padding = '8px 12px';
+    btn.style.border = '1px solid rgba(0,0,0,.18)';
+    btn.style.borderRadius = '10px';
+    btn.style.background = '#f7f7f7';
+    btn.style.cursor = 'pointer';
+    btn.style.whiteSpace = 'nowrap';
+
+    btn.addEventListener('click', () => {
+      const current = loadState();
+      const value = window.prompt(`请输入要新增到「${target}」里的内容：`, '');
+      const text = (value || '').trim();
+      if (!text) return;
+
+      current[target] = Array.isArray(current[target]) ? current[target] : [];
+      if (!current[target].includes(text)) current[target].push(text);
+
+      saveState(current);
+      refresh();
+    });
+
+    btn.dataset.customAddBtn = '1';
+    parent.appendChild(btn);
+    select.dataset.customButtonReady = '1';
+  }
+
+  function refresh() {
+    const current = loadState();
+
+    document.querySelectorAll('select').forEach(select => {
+      const target = matchTarget(select);
+      if (!target) return;
+
+      ensureButton(select, target);
+
+      const extras = Array.isArray(current[target]) ? current[target] : [];
+      const existing = new Set(
+        Array.from(select.options).map(option => option.value || option.textContent || '')
+      );
+
+      for (const item of extras) {
+        const value = String(item || '').trim();
+        if (!value || existing.has(value)) continue;
+
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
+    });
+  }
+
+  function boot() {
+    refresh();
+    const observer = new MutationObserver(() => refresh());
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
